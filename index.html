@@ -26,28 +26,72 @@
     text-shadow: 0 3px 0 rgba(0,0,0,.35); }
   .hud .score { font-size: 64px; font-weight: 900; line-height: 1; }
   .hud .sub { font-size: 15px; font-weight: 700; opacity: .9; margin-top: 4px; }
+  :root { --surface: rgba(28, 17, 11, .88); --line: rgba(255, 236, 210, .10); --text: #fff7ec; --muted: #b9a693;
+    --chip: rgba(255, 236, 210, .08); --primary: #fff4e0; --ink: #24130a; --gold1: #ffdf8a; --gold2: #f2a64a; }
   .overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px;
-    background: rgba(30, 12, 4, .55); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+    background: rgba(12, 6, 3, .52); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
   .overlay.hidden { display: none; }
-  .card { width: min(360px, 100%); background: var(--cream); color: var(--brown); border-radius: 28px; padding: 26px 22px 20px; text-align: center;
-    box-shadow: 0 10px 0 #b9773c, 0 24px 50px rgba(0,0,0,.35); }
-  .card h1 { margin: 0; font-size: 42px; font-weight: 900; letter-spacing: -1px; }
-  .card h1 span { color: var(--red); }
-  .card p { margin: 10px 0 0; font-size: 17px; font-weight: 600; line-height: 1.35; }
-  .card .big { font-size: 72px; font-weight: 900; color: var(--red); line-height: 1; margin-top: 8px; }
-  .card .row { display: flex; justify-content: center; gap: 18px; margin-top: 10px; font-weight: 800; font-size: 16px; }
-  .btn { display: block; width: 100%; margin-top: 16px; padding: 15px; border: 0; border-radius: 18px; font: inherit; font-size: 21px; font-weight: 900;
-    color: #fff; background: var(--red); box-shadow: 0 6px 0 #9e2a22; cursor: pointer; }
-  .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #9e2a22; }
-  .btn.alt { background: #2f8f5b; box-shadow: 0 6px 0 #1d5e3a; }
-  .btn.easy { background: #2f8f5b; box-shadow: 0 6px 0 #1d5e3a; }
-  .btn.moderate { background: #e08a1e; box-shadow: 0 6px 0 #9c5c0c; }
-  .btn.tough { background: var(--red); box-shadow: 0 6px 0 #9e2a22; }
-  .btn.lvl { margin-top: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; font-size: 20px; }
-  .btn.lvl small { font-size: 13px; font-weight: 800; opacity: .85; }
-  #hero { display: block; width: 210px; height: 150px; margin: 4px auto -4px; }
-  .link { display: inline-block; margin-top: 12px; color: var(--brown); font-weight: 800; font-size: 15px; opacity: .75; text-decoration: underline; cursor: pointer; }
-  .tiny { font-size: 13px !important; opacity: .7; margin-top: 12px !important; }
+  .card { width: min(360px, 100%); max-height: calc(100% - 8px); overflow: auto; background: var(--surface); color: var(--text);
+    border: 1px solid var(--line); border-radius: 30px; padding: 24px 20px 18px; text-align: center;
+    box-shadow: 0 30px 80px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06);
+    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); animation: cardIn .28s cubic-bezier(.2,.9,.3,1.2); }
+  @keyframes cardIn { from { transform: translateY(14px) scale(.97); opacity: 0; } to { transform: none; opacity: 1; } }
+  .card h1 { margin: 0; font-size: 30px; font-weight: 900; letter-spacing: -.5px; line-height: 1.1; }
+  .card p { margin: 8px 0 0; font-size: 15px; font-weight: 600; line-height: 1.4; color: var(--muted); }
+  .brand { font-size: 34px; font-weight: 900; letter-spacing: -1px; }
+  .brand b { background: linear-gradient(90deg, var(--gold1), var(--gold2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .label { margin-top: 4px; font-size: 13px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .big { font-size: 84px; font-weight: 900; line-height: 1; margin-top: 6px; color: #fff; text-shadow: 0 0 34px rgba(242,166,74,.35); }
+  .chips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 14px; }
+  .chip { padding: 7px 12px; border-radius: 999px; background: var(--chip); color: #f3e6d6; font-weight: 800; font-size: 14px; }
+  .btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 16px; min-height: 54px; padding: 0 18px;
+    border: 0; border-radius: 999px; font: inherit; font-size: 18px; font-weight: 900; cursor: pointer; color: var(--text); background: var(--chip);
+    transition: transform .1s; }
+  .btn:active { transform: scale(.97); }
+  .btn.primary { background: var(--primary); color: var(--ink); box-shadow: 0 10px 28px rgba(255, 214, 150, .18); }
+  .btn.ghost { min-height: 46px; margin-top: 10px; font-size: 16px; background: transparent; border: 1px solid rgba(255, 236, 210, .18); color: #f3e6d6; }
+  .actions { display: flex; gap: 10px; }
+  .actions .btn { flex: 1; }
+  .textbtn { display: inline-block; margin-top: 12px; color: var(--muted); font-weight: 800; font-size: 14px; text-decoration: none; cursor: pointer;
+    background: none; border: 0; font-family: inherit; padding: 6px 8px; }
+  .tiny { font-size: 13px !important; color: var(--muted); margin-top: 10px !important; }
+  #hero { display: block; width: 210px; height: 150px; margin: 2px auto -6px; }
+  /* milestone gem: gradient only on wins / new bests (Opal's milestone rule) */
+  .gem { display: none; width: 74px; height: 74px; margin: 0 auto 14px; border-radius: 50%; position: relative;
+    background: conic-gradient(from 200deg, var(--gold1), var(--gold2), #ff8a8a, #d2a8ff, #8fe3c3, var(--gold1));
+    box-shadow: 0 0 44px rgba(255, 190, 90, .45); animation: gemSpin 9s linear infinite; }
+  .gem::after { content: ""; position: absolute; inset: 9px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.95), rgba(255,255,255,.25) 35%, rgba(255,255,255,0) 60%); }
+  #clear .gem, .milestone .gem { display: block; }
+  .milestone .gem { box-shadow: 0 0 70px rgba(255, 190, 90, .7); animation: gemSpin 9s linear infinite, gemPulse 1.6s ease-in-out infinite; }
+  @keyframes gemSpin { to { transform: rotate(360deg); } }
+  @keyframes gemPulse { 50% { filter: brightness(1.25); } }
+  .stars { margin-top: 10px; font-size: 36px; letter-spacing: 8px; line-height: 1;
+    background: linear-gradient(90deg, var(--gold1), var(--gold2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .newbest { display: none; margin-top: 6px; font-size: 13px; font-weight: 900; letter-spacing: .08em; color: var(--gold1); }
+  .milestone .newbest { display: block; }
+  /* start card: difficulty rows with a level picker */
+  .diffs { margin-top: 14px; display: grid; gap: 8px; }
+  .diff { display: flex; gap: 8px; }
+  .diff-main { flex: 1; min-height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 16px;
+    border-radius: 18px; border: 1px solid var(--line); background: rgba(255, 236, 210, .05); color: var(--text); font: inherit;
+    font-size: 17px; font-weight: 900; cursor: pointer; transition: transform .1s; white-space: nowrap; min-width: 0; }
+  .diff-main:active { transform: scale(.98); }
+  .diff-main small { font-size: 12px; font-weight: 800; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .diff.primary .diff-main { background: var(--primary); color: var(--ink); border-color: transparent; box-shadow: 0 10px 28px rgba(255,214,150,.18); }
+  .diff.primary .diff-main small { color: #7a5a3e; }
+  .picker { display: flex; align-items: center; border-radius: 18px; border: 1px solid var(--line); background: rgba(255,236,210,.05); }
+  .pk { width: 28px; min-height: 54px; border: 0; background: none; color: var(--text); font-size: 13px; cursor: pointer; }
+  .pk:disabled { opacity: .25; cursor: default; }
+  .pkl { min-width: 38px; font-size: 13px; font-weight: 900; line-height: 1.15; }
+  .pkl i { display: block; font-style: normal; font-size: 10px; letter-spacing: 1px; color: var(--gold1); }
+  .quiet { min-height: 46px; margin-top: 12px; background: transparent; border: 1px dashed rgba(255,236,210,.22); font-size: 16px; color: #f3e6d6; }
+  .quiet small { font-size: 13px; color: var(--muted); font-weight: 800; }
+  /* in-level controls (restart / menu), hidden in the Daily */
+  .hudbtns { position: fixed; top: max(14px, env(safe-area-inset-top)); left: 12px; display: none; gap: 8px; z-index: 2; }
+  .hudbtns.show { display: flex; }
+  .hudbtns button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(255,255,255,.18); background: rgba(20,10,5,.35);
+    color: #fff; font-size: 18px; font-weight: 900; cursor: pointer; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
   .toast { position: fixed; left: 50%; top: 32%; transform: translate(-50%, -50%); font-size: 40px; font-weight: 900; color: var(--gold);
     text-shadow: 0 4px 0 #8a4b10, 0 0 18px rgba(255,200,60,.6); pointer-events: none; opacity: 0; transition: opacity .15s; white-space: nowrap; }
   .toast.show { opacity: 1; }
@@ -55,9 +99,10 @@
     text-shadow: 0 3px 0 rgba(0,0,0,.3); pointer-events: none; transition: opacity .3s; }
   .wind.show { opacity: .95; }
   .goal { position: fixed; left: 50%; top: 24%; transform: translate(-50%, -50%) scale(.96); text-align: center; pointer-events: none;
-    opacity: 0; transition: opacity .25s, transform .25s; color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,.35); white-space: nowrap; }
+    opacity: 0; transition: opacity .25s, transform .25s; color: #fff; white-space: nowrap; padding: 12px 22px; border-radius: 22px;
+    background: rgba(28, 17, 11, .72); border: 1px solid rgba(255,236,210,.12); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
   .goal.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-  .goal-lv { font-size: 16px; font-weight: 800; opacity: .85; }
+  .goal-lv { font-size: 13px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #b9a693; }
   .goal-tx { font-size: 30px; font-weight: 900; margin-top: 2px; }
 </style>
 </head>
@@ -69,23 +114,25 @@
 
 <div class="overlay" id="start">
   <div class="card">
-    <h1>Chai <span>Tower</span> ☕</h1>
+    <div class="brand">Chai <b>Tower</b> ☕</div>
     <canvas id="hero" aria-label="A stack of chai, biscuits and a samosa"></canvas>
     <p>Tap to drop. Stack the chai stall as high as you can!</p>
-    <button class="btn lvl easy" data-level="easy">🙂 Easy <small id="best_easy"></small></button>
-    <button class="btn lvl moderate" data-level="moderate">😎 Moderate <small id="best_moderate"></small></button>
-    <button class="btn lvl tough" data-level="tough">🔥 Tough <small id="best_tough"></small></button>
+    <div class="diffs" id="diffs"></div>
+    <button class="btn quiet" id="daily">☕ Daily Challenge <small id="dailyBest"></small></button>
     <p class="tiny" id="dailyLabel"></p>
   </div>
 </div>
+<div class="hudbtns" id="hudBtns"><button id="hudRestart" aria-label="Restart level">↺</button><button id="hudMenu" aria-label="Menu">☰</button></div>
 
 <div class="goal" id="goal"><div class="goal-lv" id="goalLv"></div><div class="goal-tx" id="goalTx"></div></div>
 
 <div class="overlay hidden" id="clear">
   <div class="card">
     <div class="gem" aria-hidden="true"></div>
+    <div class="label" id="clearDiff"></div>
     <h1 id="clearTitle">LEVEL 1 CLEAR!</h1>
     <div class="stars" id="clearStars"></div>
+    <div class="newbest">NEW BEST</div>
     <p class="hint" id="clearHint"></p>
     <div class="chips"><span class="chip" id="clearPerf"></span><span class="chip" id="clearTotal"></span></div>
     <button class="btn primary" id="next">Next level ▶</button>
@@ -95,6 +142,7 @@
 
 <div class="overlay hidden" id="fail">
   <div class="card">
+    <div class="label" id="failDiff"></div>
     <h1 id="failTitle">So close!</h1>
     <p class="msg" id="failMsg"></p>
     <div class="chips"><span class="chip" id="failGoal"></span></div>
@@ -105,14 +153,16 @@
 
 <div class="overlay hidden" id="over">
   <div class="card">
+    <div class="gem" aria-hidden="true"></div>
+    <div class="label" id="overDaily">Daily Challenge</div>
     <h1>NAHIII! 😱</h1>
     <div class="big" id="final">0</div>
-    <p style="margin-top:2px">items high</p>
-    <div class="row"><span id="perf">🔥 0 perfect</span><span id="best">🏆 Best 0</span></div>
-    <button class="btn" id="again">One more! ☕</button>
-    <a class="link" id="change">Change level</a>
-    <button class="btn alt" id="share">Share score 💬</button>
-    <p class="tiny"><a href="#" id="copy" style="color:inherit;font-weight:800">Copy score</a> <span id="shareMsg"></span></p>
+    <div class="label">items high</div>
+    <div class="newbest">NEW BEST</div>
+    <div class="chips"><span class="chip" id="perf">🔥 0 perfect</span><span class="chip" id="best">🏆 Best 0</span></div>
+    <button class="btn primary" id="again">One more ☕</button>
+    <div class="actions"><button class="btn ghost" id="share">Share 💬</button><button class="btn ghost" id="change">Menu</button></div>
+    <p class="tiny"><a href="#" class="textbtn" id="copy">Copy score</a> <span id="shareMsg"></span></p>
   </div>
 </div>
 
@@ -135,7 +185,8 @@ function resize() {
   OX = (innerWidth - LW * S) / 2;
   LH = innerHeight / S;
   const k = Math.max(1, S);                                      // bigger screens: bigger score + toasts
-  for (const id of ["hud", "toast", "wind"]) { const el = document.getElementById(id); if (el) el.style.zoom = k; }
+  for (const id of ["hud", "toast", "wind", "goal", "hudBtns"]) { const el = document.getElementById(id); if (el) el.style.zoom = k; }
+  for (const el of document.querySelectorAll(".card")) el.style.zoom = Math.min(k, (innerHeight - 24) / 600);   // tablets/laptops: bigger cards, still fit
 }
 addEventListener("resize", resize);
 resize();
@@ -592,6 +643,7 @@ function goalMet() {
 }
 
 // level wind: scheduled in physics steps from the level seed, so a boss level is the same on every attempt
+function gustDir(seed, k) { const r = rng(seed); let v = 0; for (let i = 0; i <= k; i++) v = r(); return v < .5 ? -1 : 1; }
 function levelWind() {
   const w = cur && cur.wind;
   if (!w || state !== "play") return 0;
@@ -599,7 +651,7 @@ function levelWind() {
   const t = physSteps - windArmStep - w.firstStep;
   if (t < 0) return 0;
   const k = Math.floor(t / w.everySteps), inGust = t % w.everySteps < w.durSteps;
-  const dir = (rng(w.dirSeed + k * 7919)() < .5) ? -1 : 1;
+  const dir = gustDir(w.dirSeed, k);
   if (t % w.everySteps === 0) {
     windEl.textContent = dir > 0 ? "💨 Hawa chali! →" : "← Hawa chali! 💨"; windEl.classList.add("show"); sfx.whoosh();
   }
@@ -655,8 +707,10 @@ function gameOver() {
   const score = count + bonus;
   track(`over-daily-${scoreBucket(score)}`, `Daily game over: ${scoreBucket(score)} high`);
   if (BOT) botLog.results.push({ level, daily: true, count, perfects });
-  const best = Math.max(+store.get(bestKey()) || 0, score);
+  const prevBest = +store.get(bestKey()) || 0, best = Math.max(prevBest, score);
   store.set(bestKey(), best);
+  document.getElementById("over").classList.toggle("milestone", score > prevBest && score > 0);
+  document.getElementById("overDaily").textContent = `Daily #${DAILY}`;
   document.getElementById("final").textContent = score;
   document.getElementById("perf").textContent = `🔥 ${perfects} perfect`;
   document.getElementById("best").textContent = `🏆 Best ${best}`;
@@ -775,7 +829,7 @@ function render() {
 }
 
 // ---------- input & screens ----------
-function onTap(e) { if (e.target.closest && e.target.closest(".overlay")) return; e.preventDefault(); audio(); drop(); }
+function onTap(e) { if (e.target.closest && e.target.closest(".overlay, .hudbtns")) return; e.preventDefault(); audio(); drop(); }
 addEventListener("pointerdown", onTap, { passive: false });
 addEventListener("keydown", e => { if (e.code === "Space") { audio(); drop(); } });
 const OVERLAYS = ["start", "over", "clear", "fail"];
@@ -783,6 +837,7 @@ function hideOverlays() { for (const id of OVERLAYS) document.getElementById(id)
 function start() {
   audio();
   hideOverlays();
+  document.getElementById("hudBtns").classList.toggle("show", mode === "levels");
   confetti = [];
   document.getElementById("hud").style.display = "";
   reset();
@@ -802,9 +857,10 @@ function showGoal() {
 function starRow(n) { return "★★★".slice(0, n) + "☆☆☆".slice(0, 3 - n); }
 function showClear() {
   const r = lastResult, last = cur.n >= ChaiLevels.COUNT;
+  document.getElementById("clearDiff").textContent = LEVELS[level].name;
   document.getElementById("clearTitle").textContent = last ? "ALL 30 CLEARED!" : `LEVEL ${cur.n} CLEAR!`;
   document.getElementById("clearStars").textContent = starRow(r.stars);
-  document.getElementById("clearHint").textContent = r.stars < 3 ? `3 stars: ${cur.stars[2]} perfect drops` : (r.newBest ? "Perfect level! New best ✨" : "Perfect level!");
+  document.getElementById("clearHint").textContent = r.stars < 3 ? `3 stars: ${cur.stars[2]} perfect drops` : "Perfect level! ✨";
   document.getElementById("clearPerf").textContent = `🔥 ${perfects} perfect`;
   document.getElementById("clearTotal").textContent = `⭐ ${r.total} total`;
   const next = document.getElementById("next");
@@ -816,6 +872,7 @@ function showClear() {
 }
 function showFail() {
   const f = failText();
+  document.getElementById("failDiff").textContent = LEVELS[level].name;
   document.getElementById("failTitle").textContent = f.title;
   document.getElementById("failMsg").textContent = f.msg;
   document.getElementById("failGoal").textContent = `Level ${cur.n} · ${ChaiLevels.goalText(cur)}`;
@@ -825,14 +882,41 @@ function showFail() {
 function showStart() {
   hideOverlays();
   document.getElementById("hud").style.display = "none";
+  document.getElementById("hudBtns").classList.remove("show");
   goalEl.classList.remove("show"); windEl.classList.remove("show");
-  bestTopY = null; showBests(); reset(); state = "idle";
+  bestTopY = null; refreshStart(); reset(); state = "idle";
   document.getElementById("start").classList.remove("hidden");
 }
-function playLevel(diff, n) { mode = "levels"; level = diff; levelN = ChaiLevels.clampN(n); artReady.then(start); }
+function playLevel(diff, n) { mode = "levels"; level = diff; levelN = ChaiLevels.clampN(n); store.set("ct_last", diff); picks[diff] = levelN; artReady.then(start); }
 function playDaily() { mode = "daily"; level = "moderate"; artReady.then(start); }
-for (const btn of document.querySelectorAll("[data-level]"))
-  btn.onclick = () => { const p = readProg(btn.dataset.level); playLevel(btn.dataset.level, p.done ? ChaiLevels.COUNT : p.next); };
+const picks = {}, seenMax = {};                                // level chosen in each difficulty's picker
+const unlocked = p => p.done ? ChaiLevels.COUNT : p.next;
+function refreshStart() {
+  const last = store.get("ct_last"), primary = LEVELS[last] ? last : "easy";
+  const box = document.getElementById("diffs");
+  box.innerHTML = "";
+  for (const diff of Object.keys(LEVELS)) {
+    const p = readProg(diff), max = unlocked(p);
+    if (seenMax[diff] !== max) { picks[diff] = max; seenMax[diff] = max; }   // progress moved: point at the next unbeaten level
+    if (!picks[diff] || picks[diff] > max) picks[diff] = max;
+    const n = picks[diff], st = +p.stars[n] || 0;
+    const meta = p.done ? `All cleared · ⭐ ${totalStars(p)}` : `Level ${p.next}${totalStars(p) ? ` · ⭐ ${totalStars(p)}` : ""}`;
+    const row = document.createElement("div");
+    row.className = "diff" + (diff === primary ? " primary" : "");
+    row.innerHTML = `<button class="diff-main" data-level="${diff}">${LEVELS[diff].name}<small>${meta}</small></button>
+      <div class="picker"><button class="pk" data-step="-1" aria-label="Previous level" ${n <= 1 ? "disabled" : ""}>◀</button>
+      <span class="pkl">Lv ${n}<i>${st ? starRow(st) : ""}</i></span>
+      <button class="pk" data-step="1" aria-label="Next level" ${n >= max ? "disabled" : ""}>▶</button></div>`;
+    row.querySelector(".diff-main").onclick = () => playLevel(diff, picks[diff]);
+    for (const b of row.querySelectorAll(".pk")) b.onclick = () => { picks[diff] = Math.min(max, Math.max(1, picks[diff] + +b.dataset.step)); refreshStart(); };
+    box.appendChild(row);
+  }
+  const db = +store.get(bestKey("moderate")) || 0;
+  document.getElementById("dailyBest").textContent = db ? `Best ${db}` : "";
+}
+document.getElementById("daily").onclick = playDaily;
+document.getElementById("hudRestart").onclick = () => { if (mode === "levels" && cur) playLevel(level, cur.n); };
+document.getElementById("hudMenu").onclick = showStart;
 document.getElementById("again").onclick = start;
 document.getElementById("change").onclick = showStart;
 document.getElementById("next").onclick = () => playLevel(level, cur.n >= ChaiLevels.COUNT ? cur.n : cur.n + 1);
@@ -840,14 +924,10 @@ document.getElementById("replay").onclick = () => playLevel(level, cur.n);
 document.getElementById("retry").onclick = () => playLevel(level, cur.n);
 document.getElementById("clearMenu").onclick = showStart;
 document.getElementById("failMenu").onclick = showStart;
-function showBests() {                                         // "Best 23" on each level button
-  for (const k of Object.keys(LEVELS)) { const b = +store.get(bestKey(k)) || 0;
-    document.getElementById("best_" + k).textContent = b ? `Best ${b}` : ""; }
-}
-showBests();
+refreshStart();
 function shareText() {
   const url = location.href.split(/[?#]/)[0].replace(/index\.html$/, "");
-  return { url, text: `☕ Chai Tower: ${count + bonus} high on ${L.name}!\nDaily #${DAILY} · 🔥 ${perfects} perfect drops\nCan you beat me? 👉 ${url}` };
+  return { url, text: `☕ Chai Tower Daily #${DAILY}: ${count + bonus} high!\n🔥 ${perfects} perfect drops\nCan you beat me? 👉 ${url}` };
 }
 function copyText(t) {                                        // works on http:// too (old-style copy as a fallback)
   if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t).then(() => true, () => legacyCopy(t));
