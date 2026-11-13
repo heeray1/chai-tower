@@ -509,13 +509,7 @@ const goalEl = document.getElementById("goal");
 
 // saved progress per difficulty: { next: next unbeaten level, stars: { "3": 2, ... }, done: all 30 cleared }
 const progKey = diff => `ct_prog_${diff}`;
-function readProg(diff) {
-  let p = null;
-  try { p = JSON.parse(store.get(progKey(diff)) || "null"); } catch {}
-  if (!p || typeof p !== "object") p = {};
-  const stars = p.stars && typeof p.stars === "object" ? p.stars : {};
-  return { next: ChaiLevels.clampN(p.next || 1), stars, done: !!p.done };
-}
+const readProg = diff => ChaiLevels.parseProg(store.get(progKey(diff)));
 function saveProg(diff, p) { store.set(progKey(diff), JSON.stringify(p)); }
 const totalStars = p => Object.values(p.stars).reduce((a, v) => a + (+v || 0), 0);
 const toastEl = document.getElementById("toast"), windEl = document.getElementById("wind");
@@ -545,6 +539,7 @@ function reset() {
   windUntil = 0; nextWindAt = 1e12; windDir = 1; overAt = 0;
   misses = 0; physSteps = 0; windArmStep = null; settleSteps = 0; lastCounted = null; kettleLandedStep = null; gustK = -1; gustD = 1;
   endCause = null; endAt = 0; cardShown = false;
+  windEl.classList.remove("show");
   engine.timing.timeScale = 1;
   Events.on(engine, "collisionStart", onCollide);
   state = "play";
@@ -565,7 +560,7 @@ function onCollide(e) {
     b.landed = true;
     const sup = b.supportRef || tray;
     const onTower = other === sup || (other.landed && !other.miss && other.bounds.min.y <= topY + 14);
-    if (!onTower) { b.miss = true; combo = 0; sfx.land(b.kind); toast("Miss!"); addMiss(); continue; }
+    if (!onTower) { b.miss = true; combo = 0; sfx.land(b.kind); toast("Miss!"); loseItem(b); continue; }
     if (mode === "levels" && cur.assist) {                       // gentle opening levels: nudge a slightly-off landing
       const dx = sup.position.x - b.position.x;
       if (Math.abs(dx) < 26) { Body.setPosition(b, { x: b.position.x + dx * .6, y: b.position.y }); Body.setAngularVelocity(b, 0); Body.setAngle(b, b.angle * .3); }
@@ -628,17 +623,17 @@ function addMiss() {
   if (mode !== "levels" || state !== "play") return;
   misses++;
   updateHud();
-  if (cur.maxMiss !== null && misses > cur.maxMiss) levelFail("miss");
+  if (ChaiLevels.missLimitBroken(cur, misses)) levelFail("miss");
+}
+function loseItem(b) {                                          // a missed or slipped item in level mode
+  if (mode === "levels" && state === "play" && ChaiLevels.kettleLost(cur, b.kind)) { levelFail("kettle"); return; }
+  addMiss();
 }
 
 // level goal met? (the last counted item must also have settled: see the frame loop)
 function goalMet() {
-  if (count < cur.target || perfects < cur.perfects) return false;
-  if (cur.goal === "kettle") {
-    const k = items.find(b => b.kind === "kettle" && b.counted && !b.fallen);
-    return !!k && kettleLandedStep !== null && physSteps - kettleLandedStep >= 120;   // stood ~2 s after landing
-  }
-  return true;
+  const k = cur.goal === "kettle" && items.some(b => b.kind === "kettle" && b.counted && !b.fallen);
+  return ChaiLevels.goalReached(cur, { count, perfects, kettleStoodSteps: k && kettleLandedStep !== null ? physSteps - kettleLandedStep : null });
 }
 
 // level wind: scheduled in physics steps from the level seed, so a boss level is the same on every attempt
@@ -663,11 +658,9 @@ function levelWind() {
 function levelClear() {
   state = "cleared"; endAt = performance.now();
   const stars = ChaiLevels.starsFor(cur, perfects);
-  const p = readProg(level), prevStars = +p.stars[cur.n] || 0, first = !prevStars;
-  p.stars[cur.n] = Math.max(prevStars, stars);
-  if (cur.n >= p.next) { if (cur.n >= ChaiLevels.COUNT) p.done = true; else p.next = cur.n + 1; }
-  saveProg(level, p);
-  lastResult = { stars, newBest: stars > prevStars, first, total: totalStars(p), done: p.done };
+  const r = ChaiLevels.recordClear(readProg(level), cur.n, stars), first = r.first;
+  saveProg(level, r.prog);
+  lastResult = { stars, perfects, newBest: r.newBest, total: totalStars(r.prog) };
   track(`clear-${level}-${cur.n}`, `Level clear (${level} ${cur.n})`);
   if (first) track(`first-clear-${level}-${cur.n}`, `First clear (${level} ${cur.n})`);
   windEl.classList.remove("show");
@@ -682,13 +675,14 @@ function levelFail(cause) {
   state = "falling"; endAt = overAt = performance.now(); endCause = cause;
   windEl.classList.remove("show");
   if (cause === "fall") crashFx();
-  else { sfx.land("kettle"); buzz(60); toast("Too many misses!"); }
+  else { sfx.land("kettle"); buzz(60); toast(cause === "kettle" ? "Kettle down!" : "Too many misses!"); }
   track(`fail-${level}-${cur.n}`, `Level fail (${level} ${cur.n})`);
   if (BOT) botNote("fail");
 }
 
 // how close was it? phrased per goal type
 function failText() {
+  if (endCause === "kettle") return { title: "Kettle down!", msg: "The heavy kettle has to stay on the tower. Drop it dead centre!" };
   if (endCause === "miss") return { title: "Too many misses", msg: `Only ${cur.maxMiss === 0 ? "perfect landings" : cur.maxMiss + " miss" + (cur.maxMiss > 1 ? "es" : "")} allowed here. You stacked ${Math.max(0, count)}.` };
   const need = cur.target - Math.max(0, count);
   if (need > 0) {
@@ -752,11 +746,11 @@ function frame(now) {
       } else if (b.landed && !b.miss && b.bounds.min.y < top) top = b.bounds.min.y;
       if (state === "play" && b.counted && !b.isBase && !b.isStatic && b.speed < .3 && b.bounds.max.y > trayY - 12) {
         b.counted = false; b.miss = true; count--; bonus -= ITEMS[b.kind].bonus || 0; combo = 0;
-        toast("Slipped! −1"); updateHud(); addMiss();
+        toast("Slipped! −1"); updateHud(); loseItem(b);
       }
     }
     topY = top;
-    if (state === "falling" && now - overAt > (endCause === "miss" ? 900 : 1700)) {
+    if (state === "falling" && now - overAt > (endCause === "fall" || !endCause ? 1700 : 900)) {
       state = "over";
       if (mode === "levels") showFail(); else document.getElementById("over").classList.remove("hidden");
     }
@@ -832,7 +826,12 @@ function render() {
 // ---------- input & screens ----------
 function onTap(e) { if (e.target.closest && e.target.closest(".overlay, .hudbtns")) return; e.preventDefault(); audio(); drop(); }
 addEventListener("pointerdown", onTap, { passive: false });
-addEventListener("keydown", e => { if (e.code === "Space") { audio(); drop(); } });
+addEventListener("keydown", e => {
+  if (e.code !== "Space") return;
+  if (e.target.closest && e.target.closest("button, a")) { e.preventDefault(); e.target.blur(); }   // no double action on a focused button
+  else e.preventDefault();
+  audio(); drop();
+});
 const OVERLAYS = ["start", "over", "clear", "fail"];
 function hideOverlays() { for (const id of OVERLAYS) document.getElementById(id).classList.add("hidden"); }
 function start() {
@@ -862,7 +861,7 @@ function showClear() {
   document.getElementById("clearTitle").textContent = isFinal ? "ALL 30 CLEARED!" : `LEVEL ${cur.n} CLEAR!`;
   document.getElementById("clearStars").textContent = starRow(r.stars);
   document.getElementById("clearHint").textContent = r.stars < 3 ? `3 stars: ${cur.stars[2]} perfect drops` : "Perfect level! ✨";
-  document.getElementById("clearPerf").textContent = `🔥 ${perfects} perfect`;
+  document.getElementById("clearPerf").textContent = `🔥 ${r.perfects} perfect`;
   document.getElementById("clearTotal").textContent = `⭐ ${r.total} total`;
   const next = document.getElementById("next");
   next.textContent = isFinal ? "↺ Replay level 30" : "Next level ▶";

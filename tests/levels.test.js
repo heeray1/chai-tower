@@ -99,3 +99,47 @@ test("goalText reads plainly for every goal type", () => {
   const boss = L.level("moderate", 5);
   assert.match(L.goalText(boss), boss.wind ? /wind/i : /kettle/i);
 });
+
+// ---- round rules (pure functions shared with index.html) ----
+test("parseProg tolerates missing, corrupt and out-of-range saved progress", () => {
+  assert.deepEqual(L.parseProg(null), { next: 1, stars: {}, done: false });
+  assert.deepEqual(L.parseProg("{oops"), { next: 1, stars: {}, done: false });
+  assert.deepEqual(L.parseProg("42"), { next: 1, stars: {}, done: false });
+  assert.deepEqual(L.parseProg('{"next": 99, "stars": "x"}'), { next: 30, stars: {}, done: false });
+  assert.deepEqual(L.parseProg('{"next": 6, "stars": {"3": 2}, "done": 1}'), { next: 6, stars: { 3: 2 }, done: true });
+});
+
+test("recordClear unlocks the next level, keeps best stars, marks level 30 done", () => {
+  let r = L.recordClear({ next: 1, stars: {}, done: false }, 1, 2);
+  assert.deepEqual(r.prog, { next: 2, stars: { 1: 2 }, done: false });
+  assert.equal(r.first, true); assert.equal(r.newBest, true);
+  r = L.recordClear({ next: 6, stars: { 2: 3 }, done: false }, 2, 1);      // replay with fewer stars
+  assert.deepEqual(r.prog, { next: 6, stars: { 2: 3 }, done: false });
+  assert.equal(r.first, false); assert.equal(r.newBest, false);
+  r = L.recordClear({ next: 30, stars: {}, done: false }, 30, 1);
+  assert.equal(r.prog.next, 30); assert.equal(r.prog.done, true);
+});
+
+test("goalReached needs target, required perfects and, on kettle goals, a kettle that stood ~2 s", () => {
+  const stack = L.level("easy", 1), perfect = L.level("moderate", 2), kettle = L.level("moderate", 4);
+  assert.equal(L.goalReached(stack, { count: 2, perfects: 2, kettleStoodSteps: null }), false);
+  assert.equal(L.goalReached(stack, { count: 3, perfects: 0, kettleStoodSteps: null }), true);
+  assert.equal(perfect.goal, "perfect");
+  assert.equal(L.goalReached(perfect, { count: perfect.target, perfects: perfect.perfects - 1, kettleStoodSteps: null }), false);
+  assert.equal(L.goalReached(perfect, { count: perfect.target, perfects: perfect.perfects, kettleStoodSteps: null }), true);
+  assert.equal(kettle.goal, "kettle");
+  assert.equal(L.goalReached(kettle, { count: kettle.target, perfects: 0, kettleStoodSteps: null }), false);
+  assert.equal(L.goalReached(kettle, { count: kettle.target, perfects: 0, kettleStoodSteps: 119 }), false);
+  assert.equal(L.goalReached(kettle, { count: kettle.target, perfects: 0, kettleStoodSteps: 120 }), true);
+});
+
+test("round fail rules: miss limit, and losing the kettle on kettle goals", () => {
+  const miss = L.level("moderate", 3), stack = L.level("easy", 1), kettle = L.level("moderate", 4);
+  assert.equal(miss.goal, "miss");
+  assert.equal(L.missLimitBroken(miss, miss.maxMiss), false);
+  assert.equal(L.missLimitBroken(miss, miss.maxMiss + 1), true);
+  assert.equal(L.missLimitBroken(stack, 50), false);                    // no limit on plain stack goals
+  assert.equal(L.kettleLost(kettle, "kettle"), true);                   // a kettle missed or slipped ends a kettle level
+  assert.equal(L.kettleLost(kettle, "kulhad"), false);
+  assert.equal(L.kettleLost(stack, "kettle"), false);
+});

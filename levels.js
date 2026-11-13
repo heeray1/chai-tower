@@ -73,7 +73,32 @@
     return t;
   }
 
-  const api = { COUNT, DIFFS: Object.keys(DIFF), level, starsFor, goalText, clampN };
+  // ---- round rules (pure: index.html feeds in the live counts) ----
+  // saved progress per difficulty: { next: next unbeaten level, stars: { "3": 2 }, done: all levels cleared }
+  function parseProg(raw) {
+    let p = null;
+    try { p = JSON.parse(raw || "null"); } catch {}
+    if (!p || typeof p !== "object") p = {};
+    const stars = p.stars && typeof p.stars === "object" ? p.stars : {};
+    return { next: clampN(p.next || 1), stars, done: !!p.done };
+  }
+  function recordClear(prog, n, stars) {
+    const prevStars = +prog.stars[n] || 0;
+    const p = { next: prog.next, stars: { ...prog.stars, [n]: Math.max(prevStars, stars) }, done: prog.done };
+    if (n >= p.next) { if (n >= COUNT) p.done = true; else p.next = n + 1; }
+    return { prog: p, prevStars, first: !prevStars, newBest: stars > prevStars };
+  }
+  // s = { count, perfects, kettleStoodSteps: physics steps the counted kettle has stood (null if none) }
+  function goalReached(def, s) {
+    if (s.count < def.target || s.perfects < def.perfects) return false;
+    if (def.goal === "kettle") return s.kettleStoodSteps !== null && s.kettleStoodSteps >= 120;   // stood ~2 s
+    return true;
+  }
+  const missLimitBroken = (def, misses) => def.maxMiss !== null && misses > def.maxMiss;
+  const kettleLost = (def, kind) => def.goal === "kettle" && kind === "kettle";   // missed/slipped kettle ends the round
+
+  const api = { COUNT, DIFFS: Object.keys(DIFF), level, starsFor, goalText, clampN,
+                parseProg, recordClear, goalReached, missLimitBroken, kettleLost };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.ChaiLevels = api;
 })(typeof window !== "undefined" ? window : this);

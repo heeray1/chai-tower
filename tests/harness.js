@@ -94,6 +94,9 @@ async function easyCurve(runs = 10) {
     console.log(`run ${i + 1}: ${log.stopReason || "timeout"}  attempts ${JSON.stringify(log.attempts)}${r.errors.length ? "  ERRORS " + r.errors : ""}`);
   });
   let pass = true;
+  out.forEach((r, i) => {                                        // a broken page or a stalled run must fail the gate
+    if (r.errors.length || !(r.botLog && r.botLog.stopped)) { pass = false; console.log(`run ${i + 1} INVALID: ${r.errors.length ? "page errors" : "did not finish"}`); }
+  });
   for (let n = 1; n <= 7; n++) {
     const ok = clears[n] >= Math.ceil(runs * .8);
     pass = pass && ok;
