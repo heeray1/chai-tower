@@ -26,34 +26,83 @@
     text-shadow: 0 3px 0 rgba(0,0,0,.35); }
   .hud .score { font-size: 64px; font-weight: 900; line-height: 1; }
   .hud .sub { font-size: 15px; font-weight: 700; opacity: .9; margin-top: 4px; }
+  :root { --surface: rgba(28, 17, 11, .88); --line: rgba(255, 236, 210, .10); --text: #fff7ec; --muted: #b9a693;
+    --chip: rgba(255, 236, 210, .08); --primary: #fff4e0; --ink: #24130a; --gold1: #ffdf8a; --gold2: #f2a64a; }
   .overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px;
-    background: rgba(30, 12, 4, .55); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+    background: rgba(12, 6, 3, .52); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
   .overlay.hidden { display: none; }
-  .card { width: min(360px, 100%); background: var(--cream); color: var(--brown); border-radius: 28px; padding: 26px 22px 20px; text-align: center;
-    box-shadow: 0 10px 0 #b9773c, 0 24px 50px rgba(0,0,0,.35); }
-  .card h1 { margin: 0; font-size: 42px; font-weight: 900; letter-spacing: -1px; }
-  .card h1 span { color: var(--red); }
-  .card p { margin: 10px 0 0; font-size: 17px; font-weight: 600; line-height: 1.35; }
-  .card .big { font-size: 72px; font-weight: 900; color: var(--red); line-height: 1; margin-top: 8px; }
-  .card .row { display: flex; justify-content: center; gap: 18px; margin-top: 10px; font-weight: 800; font-size: 16px; }
-  .btn { display: block; width: 100%; margin-top: 16px; padding: 15px; border: 0; border-radius: 18px; font: inherit; font-size: 21px; font-weight: 900;
-    color: #fff; background: var(--red); box-shadow: 0 6px 0 #9e2a22; cursor: pointer; }
-  .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #9e2a22; }
-  .btn.alt { background: #2f8f5b; box-shadow: 0 6px 0 #1d5e3a; }
-  .btn.easy { background: #2f8f5b; box-shadow: 0 6px 0 #1d5e3a; }
-  .btn.moderate { background: #e08a1e; box-shadow: 0 6px 0 #9c5c0c; }
-  .btn.tough { background: var(--red); box-shadow: 0 6px 0 #9e2a22; }
-  .btn.lvl { margin-top: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; font-size: 20px; }
-  .btn.lvl small { font-size: 13px; font-weight: 800; opacity: .85; }
-  #hero { display: block; width: 210px; height: 150px; margin: 4px auto -4px; }
-  .link { display: inline-block; margin-top: 12px; color: var(--brown); font-weight: 800; font-size: 15px; opacity: .75; text-decoration: underline; cursor: pointer; }
-  .tiny { font-size: 13px !important; opacity: .7; margin-top: 12px !important; }
+  .card { width: min(360px, 100%); max-height: calc(100% - 8px); overflow: auto; background: var(--surface); color: var(--text);
+    border: 1px solid var(--line); border-radius: 30px; padding: 24px 20px 18px; text-align: center;
+    box-shadow: 0 30px 80px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06); animation: cardIn .28s cubic-bezier(.2,.9,.3,1.2); }
+  @keyframes cardIn { from { transform: translateY(14px) scale(.97); opacity: 0; } to { transform: none; opacity: 1; } }
+  .card h1 { margin: 0; font-size: 30px; font-weight: 900; letter-spacing: -.5px; line-height: 1.1; }
+  .card p { margin: 8px 0 0; font-size: 15px; font-weight: 600; line-height: 1.4; color: var(--muted); }
+  .brand { font-size: 34px; font-weight: 900; letter-spacing: -1px; }
+  .brand b { background: linear-gradient(90deg, var(--gold1), var(--gold2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .label { margin-top: 4px; font-size: 13px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .big { font-size: 84px; font-weight: 900; line-height: 1; margin-top: 6px; color: #fff; text-shadow: 0 0 34px rgba(242,166,74,.35); }
+  .chips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 14px; }
+  .chip { padding: 7px 12px; border-radius: 999px; background: var(--chip); color: #f3e6d6; font-weight: 800; font-size: 14px; }
+  .btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 16px; min-height: 54px; padding: 0 18px;
+    border: 0; border-radius: 999px; font: inherit; font-size: 18px; font-weight: 900; cursor: pointer; color: var(--text); background: var(--chip);
+    transition: transform .1s; }
+  .btn:active { transform: scale(.97); }
+  .btn.primary { background: var(--primary); color: var(--ink); box-shadow: 0 10px 28px rgba(255, 214, 150, .18); }
+  .btn.ghost { min-height: 46px; margin-top: 10px; font-size: 16px; background: transparent; border: 1px solid rgba(255, 236, 210, .18); color: #f3e6d6; }
+  .actions { display: flex; gap: 10px; }
+  .actions .btn { flex: 1; }
+  .textbtn { display: inline-block; margin-top: 12px; color: var(--muted); font-weight: 800; font-size: 14px; text-decoration: none; cursor: pointer;
+    background: none; border: 0; font-family: inherit; padding: 6px 8px; }
+  .tiny { font-size: 13px !important; color: var(--muted); margin-top: 10px !important; }
+  #hero { display: block; width: 210px; height: 150px; margin: 2px auto -6px; }
+  /* milestone gem: gradient only on wins / new bests */
+  .gem { display: none; width: 74px; height: 74px; margin: 0 auto 14px; border-radius: 50%; position: relative;
+    background: conic-gradient(from 200deg, var(--gold1), var(--gold2), #ff8a8a, #d2a8ff, #8fe3c3, var(--gold1));
+    box-shadow: 0 0 44px rgba(255, 190, 90, .45); animation: gemSpin 9s linear infinite; }
+  .gem::after { content: ""; position: absolute; inset: 9px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.95), rgba(255,255,255,.25) 35%, rgba(255,255,255,0) 60%); }
+  #clear .gem, .milestone .gem { display: block; }
+  .milestone .gem { box-shadow: 0 0 70px rgba(255, 190, 90, .7); animation: gemSpin 9s linear infinite, gemPulse 1.6s ease-in-out infinite; }
+  @keyframes gemSpin { to { transform: rotate(360deg); } }
+  @keyframes gemPulse { 50% { filter: brightness(1.25); } }
+  .stars { margin-top: 10px; font-size: 36px; letter-spacing: 8px; line-height: 1;
+    background: linear-gradient(90deg, var(--gold1), var(--gold2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .newbest { display: none; margin-top: 6px; font-size: 13px; font-weight: 900; letter-spacing: .08em; color: var(--gold1); }
+  .milestone .newbest { display: block; }
+  /* start card: difficulty rows with a level picker */
+  .diffs { margin-top: 14px; display: grid; gap: 8px; }
+  .diff { display: flex; gap: 8px; }
+  .diff-main { flex: 1; min-height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 16px;
+    border-radius: 18px; border: 1px solid var(--line); background: rgba(255, 236, 210, .05); color: var(--text); font: inherit;
+    font-size: 17px; font-weight: 900; cursor: pointer; transition: transform .1s; white-space: nowrap; min-width: 0; }
+  .diff-main:active { transform: scale(.98); }
+  .diff-main small { font-size: 12px; font-weight: 800; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .diff.primary .diff-main { background: var(--primary); color: var(--ink); border-color: transparent; box-shadow: 0 10px 28px rgba(255,214,150,.18); }
+  .diff.primary .diff-main small { color: #7a5a3e; }
+  .picker { display: flex; align-items: center; border-radius: 18px; border: 1px solid var(--line); background: rgba(255,236,210,.05); }
+  .pk { width: 28px; min-height: 54px; border: 0; background: none; color: var(--text); font-size: 13px; cursor: pointer; }
+  .pk:disabled { opacity: .25; cursor: default; }
+  .pkl { min-width: 38px; font-size: 13px; font-weight: 900; line-height: 1.15; }
+  .pkl i { display: block; font-style: normal; font-size: 10px; letter-spacing: 1px; color: var(--gold1); }
+  .quiet { min-height: 46px; margin-top: 12px; background: transparent; border: 1px dashed rgba(255,236,210,.22); font-size: 16px; color: #f3e6d6; }
+  .quiet small { font-size: 13px; color: var(--muted); font-weight: 800; }
+  /* in-level controls (restart / menu), hidden in the Daily */
+  .hudbtns { position: fixed; top: max(14px, env(safe-area-inset-top)); left: 12px; display: none; gap: 8px; z-index: 2; }
+  .hudbtns.show { display: flex; }
+  .hudbtns button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(255,255,255,.18); background: rgba(20,10,5,.55);
+    color: #fff; font-size: 18px; font-weight: 900; cursor: pointer; }
   .toast { position: fixed; left: 50%; top: 32%; transform: translate(-50%, -50%); font-size: 40px; font-weight: 900; color: var(--gold);
     text-shadow: 0 4px 0 #8a4b10, 0 0 18px rgba(255,200,60,.6); pointer-events: none; opacity: 0; transition: opacity .15s; white-space: nowrap; }
   .toast.show { opacity: 1; }
   .wind { position: fixed; top: 46%; width: 100%; text-align: center; font-size: 28px; font-weight: 900; color: #e8f4ff; opacity: 0;
     text-shadow: 0 3px 0 rgba(0,0,0,.3); pointer-events: none; transition: opacity .3s; }
   .wind.show { opacity: .95; }
+  .goal { position: fixed; left: 50%; top: 24%; transform: translate(-50%, -50%) scale(.96); text-align: center; pointer-events: none;
+    opacity: 0; transition: opacity .25s, transform .25s; color: #fff; white-space: nowrap; padding: 12px 22px; border-radius: 22px;
+    background: rgba(28, 17, 11, .72); border: 1px solid rgba(255,236,210,.12); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .goal.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  .goal-lv { font-size: 13px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #b9a693; }
+  .goal-tx { font-size: 30px; font-weight: 900; margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -64,30 +113,60 @@
 
 <div class="overlay" id="start">
   <div class="card">
-    <h1>Chai <span>Tower</span> ☕</h1>
+    <div class="brand">Chai <b>Tower</b> ☕</div>
     <canvas id="hero" aria-label="A stack of chai, biscuits and a samosa"></canvas>
     <p>Tap to drop. Stack the chai stall as high as you can!</p>
-    <button class="btn lvl easy" data-level="easy">🙂 Easy <small id="best_easy"></small></button>
-    <button class="btn lvl moderate" data-level="moderate">😎 Moderate <small id="best_moderate"></small></button>
-    <button class="btn lvl tough" data-level="tough">🔥 Tough <small id="best_tough"></small></button>
+    <div class="diffs" id="diffs"></div>
+    <button class="btn quiet" id="daily">☕ Daily Challenge <small id="dailyBest"></small></button>
     <p class="tiny" id="dailyLabel"></p>
+  </div>
+</div>
+<div class="hudbtns" id="hudBtns"><button id="hudRestart" aria-label="Restart level">↺</button><button id="hudMenu" aria-label="Menu">☰</button></div>
+
+<div class="goal" id="goal"><div class="goal-lv" id="goalLv"></div><div class="goal-tx" id="goalTx"></div></div>
+
+<div class="overlay hidden" id="clear">
+  <div class="card">
+    <div class="gem" aria-hidden="true"></div>
+    <div class="label" id="clearDiff"></div>
+    <h1 id="clearTitle">LEVEL 1 CLEAR!</h1>
+    <div class="stars" id="clearStars"></div>
+    <div class="newbest">NEW BEST</div>
+    <p class="hint" id="clearHint"></p>
+    <div class="chips"><span class="chip" id="clearPerf"></span><span class="chip" id="clearTotal"></span></div>
+    <button class="btn primary" id="next">Next level ▶</button>
+    <div class="actions"><button class="btn ghost" id="replay">↺ Replay</button><button class="btn ghost" id="clearMenu">Menu</button></div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="fail">
+  <div class="card">
+    <div class="label" id="failDiff"></div>
+    <h1 id="failTitle">So close!</h1>
+    <p class="msg" id="failMsg"></p>
+    <div class="chips"><span class="chip" id="failGoal"></span></div>
+    <button class="btn primary" id="retry">Try again ↺</button>
+    <div class="actions"><button class="btn ghost" id="failMenu">Menu</button></div>
   </div>
 </div>
 
 <div class="overlay hidden" id="over">
   <div class="card">
+    <div class="gem" aria-hidden="true"></div>
+    <div class="label" id="overDaily">Daily Challenge</div>
     <h1>NAHIII! 😱</h1>
     <div class="big" id="final">0</div>
-    <p style="margin-top:2px">items high</p>
-    <div class="row"><span id="perf">🔥 0 perfect</span><span id="best">🏆 Best 0</span></div>
-    <button class="btn" id="again">One more! ☕</button>
-    <a class="link" id="change">Change level</a>
-    <button class="btn alt" id="share">Share score 💬</button>
-    <p class="tiny"><a href="#" id="copy" style="color:inherit;font-weight:800">Copy score</a> <span id="shareMsg"></span></p>
+    <div class="label">items high</div>
+    <div class="newbest">NEW BEST</div>
+    <div class="chips"><span class="chip" id="perf">🔥 0 perfect</span><span class="chip" id="best">🏆 Best 0</span></div>
+    <button class="btn primary" id="again">One more ☕</button>
+    <div class="actions"><button class="btn ghost" id="share">Share 💬</button><button class="btn ghost" id="change">Menu</button></div>
+    <p class="tiny"><a href="#" class="textbtn" id="copy">Copy score</a> <span id="shareMsg"></span></p>
   </div>
 </div>
 
 <script src="vendor/matter.min.js"></script>
+<script src="levels.js"></script>
 <script>
 "use strict";
 const { Engine, Bodies, Body, Composite, Events } = Matter;
@@ -105,7 +184,8 @@ function resize() {
   OX = (innerWidth - LW * S) / 2;
   LH = innerHeight / S;
   const k = Math.max(1, S);                                      // bigger screens: bigger score + toasts
-  for (const id of ["hud", "toast", "wind"]) { const el = document.getElementById(id); if (el) el.style.zoom = k; }
+  for (const id of ["hud", "toast", "wind", "goal", "hudBtns"]) { const el = document.getElementById(id); if (el) el.style.zoom = k; }
+  for (const el of document.querySelectorAll(".card")) el.style.zoom = Math.min(k, (innerHeight - 24) / 600);   // tablets/laptops: bigger cards, still fit
 }
 addEventListener("resize", resize);
 resize();
@@ -407,12 +487,13 @@ const sfx = {
   perfect(c) { const b = 660 * Math.pow(1.06, Math.min(c, 12)); tone(b, .12, "sine", .2); tone(b * 1.5, .22, "sine", .18, .08); },
   crash() { noise(1.1, .4, 3000, 150); for (let i = 0; i < 7; i++) tone(1200 + Math.random() * 1800, .1, "triangle", .1, i * .09 + Math.random() * .05); },
   whoosh() { noise(.7, .12, 600, 2400); },
+  clear() { [523, 659, 784, 1047].forEach((f, i) => { tone(f, .22, "sine", .2, i * .09); tone(f * 2, .12, "triangle", .05, i * .09); }); },
 };
 const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch {} };
 
 // ---------- game state ----------
 const LEVELS = {
-  easy:     { name: "🙂 Easy",     tray: 280, speed0: 1.3, speedUp: .035, speedMax: 3.0, perfect: 9, wind: null, kettleAfter: 15, live: 3 },
+  easy:     { name: "🙂 Easy",     tray: 280, speed0: 1.15, speedUp: .03, speedMax: 2.8, perfect: 9, wind: null, kettleAfter: 15, live: 3 },
   moderate: { name: "😎 Moderate", tray: 240, speed0: 1.7, speedUp: .055, speedMax: 4.2, perfect: 6, wind: 20,   kettleAfter: 8,  live: 4 },
   tough:    { name: "🔥 Tough",    tray: 200, speed0: 2.2, speedUp: .07,  speedMax: 5.0, perfect: 4, wind: 12,   kettleAfter: 5,  live: 5 },
 };
@@ -420,15 +501,28 @@ let level = LEVELS[params.get("level")] ? params.get("level") : "moderate", L = 
 const bestKey = (lv = level) => lv === "moderate" ? "ct_best" : `ct_best_${lv}`;   // moderate keeps the old saved best
 let engine, trayY, tray, items, current, topY, camTop, swingT, state, count, bonus, perfects, combo, lastDropAt,
     nextKind, rand, dropIndex, windUntil, nextWindAt, windDir, overAt, bestTopY = null;
+// level mode ("levels") vs the endless Daily Challenge ("daily")
+let mode = params.get("mode") === "levels" ? "levels" : "daily";
+let levelN = ChaiLevels.clampN(params.get("n") || 1), cur = null, lastResult = null;
+let misses, physSteps, windArmStep, settleSteps, lastCounted, kettleLandedStep, endCause, endAt, cardShown, gustK, gustD;
+const goalEl = document.getElementById("goal");
+
+// saved progress per difficulty: { next: next unbeaten level, stars: { "3": 2, ... }, done: all 30 cleared }
+const progKey = diff => `ct_prog_${diff}`;
+const readProg = diff => ChaiLevels.parseProg(store.get(progKey(diff)));
+function saveProg(diff, p) { store.set(progKey(diff), JSON.stringify(p)); }
+const totalStars = p => Object.values(p.stars).reduce((a, v) => a + (+v || 0), 0);
 const toastEl = document.getElementById("toast"), windEl = document.getElementById("wind");
 let toastTimer = 0;
 function toast(text) { toastEl.textContent = text; toastEl.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.classList.remove("show"), 650); }
 
 function pickKind() {
   dropIndex++;
+  if (mode === "levels" && cur.kettleAt !== null && dropIndex === cur.kettleAt + 1) return "kettle";   // kettle levels
   if (dropIndex <= 2) return "kulhad";                      // gentle start
   if (dropIndex > 5 && rand() < .045) return "golden";
-  let k; do { k = POOL[Math.floor(rand() * POOL.length)]; } while ((k === "kettle" ? L.kettleAfter : ITEMS[k].after || 0) > dropIndex);
+  const kettleAfter = mode === "levels" ? cur.kettleAfter : L.kettleAfter;
+  let k; do { k = POOL[Math.floor(rand() * POOL.length)]; } while ((k === "kettle" ? kettleAfter : ITEMS[k].after || 0) > dropIndex);
   return k;
 }
 
@@ -440,8 +534,12 @@ function reset() {
   tray = Bodies.rectangle(LW / 2, trayY, TRAY_W, 16, { isStatic: true, friction: 1, frictionStatic: 1.5, chamfer: { radius: 6 } });
   Composite.add(engine.world, tray);
   items = []; current = null; topY = trayY - 8; camTop = 0; swingT = 0; count = 0; bonus = 0; perfects = 0; combo = 0; lastDropAt = -1e9;
-  rand = rng(DAILY * 7919); dropIndex = 0; nextKind = pickKind();
+  if (mode === "levels") cur = ChaiLevels.level(level, levelN);
+  rand = rng(mode === "levels" ? cur.seed : DAILY * 7919); dropIndex = 0; nextKind = pickKind();
   windUntil = 0; nextWindAt = 1e12; windDir = 1; overAt = 0;
+  misses = 0; physSteps = 0; windArmStep = null; settleSteps = 0; lastCounted = null; kettleLandedStep = null; gustK = -1; gustD = 1;
+  endCause = null; endAt = 0; cardShown = false;
+  windEl.classList.remove("show");
   engine.timing.timeScale = 1;
   Events.on(engine, "collisionStart", onCollide);
   state = "play";
@@ -462,14 +560,19 @@ function onCollide(e) {
     b.landed = true;
     const sup = b.supportRef || tray;
     const onTower = other === sup || (other.landed && !other.miss && other.bounds.min.y <= topY + 14);
-    if (!onTower) { b.miss = true; combo = 0; sfx.land(b.kind); toast("Miss!"); continue; }
+    if (!onTower) { b.miss = true; combo = 0; sfx.land(b.kind); toast("Miss!"); loseItem(b); continue; }
+    if (mode === "levels" && cur.assist) {                       // gentle opening levels: nudge a slightly-off landing
+      const dx = sup.position.x - b.position.x;
+      if (Math.abs(dx) < 26) { Body.setPosition(b, { x: b.position.x + dx * .6, y: b.position.y }); Body.setAngularVelocity(b, 0); Body.setAngle(b, b.angle * .3); }
+    }
     const off = Math.abs(b.position.x - sup.position.x);
     count++; bonus += ITEMS[b.kind].bonus || 0;
-    b.counted = true; b.isBase = sup === tray;
+    b.counted = true; b.isBase = sup === tray; lastCounted = b; settleSteps = 0;
+    if (b.kind === "kettle") kettleLandedStep = physSteps;
     if (off < L.perfect) { combo++; perfects++; sfx.perfect(combo); buzz(25); toast(combo > 1 ? `PERFECT ×${combo}!` : "PERFECT!"); }
     else { combo = 0; sfx.land(b.kind); buzz(10); }
     if (ITEMS[b.kind].bonus) toast("⭐ GOLDEN +5!");
-    if (L.wind && count === L.wind) { nextWindAt = performance.now() + 2500; }
+    if (mode === "daily" && L.wind && count === L.wind) { nextWindAt = performance.now() + 2500; }
     freezeBuried();
     updateHud();
   }
@@ -503,20 +606,106 @@ const swingVel = () => Math.cos(swingT) * swingAmp() * swingSpeed() / 60;
 const spawnY = () => Math.min(topY, trayY) - 120;
 
 function updateHud() {
+  if (mode === "levels" && cur) {
+    document.getElementById("score").textContent = `${Math.max(0, count)}/${cur.target}`;
+    let sub = `Level ${cur.n}  ·  ${ChaiLevels.goalText(cur)}`;
+    if (cur.goal === "perfect") sub += `  ·  ⭐ ${Math.min(perfects, cur.perfects)}/${cur.perfects}`;
+    if (cur.goal === "miss") sub += `  ·  ${Math.max(0, cur.maxMiss - misses)} miss left`;
+    document.getElementById("sub").textContent = sub;
+    return;
+  }
   document.getElementById("score").textContent = count + bonus;
   const best = +store.get(bestKey()) || 0;
   document.getElementById("sub").textContent = `${L.name}  ·  🏆 ${Math.max(best, count + bonus)}  ·  🔥 ${perfects} perfect`;
 }
 
+function addMiss() {
+  if (mode !== "levels" || state !== "play") return;
+  misses++;
+  updateHud();
+  if (ChaiLevels.missLimitBroken(cur, misses)) levelFail("miss");
+}
+function loseItem(b) {                                          // a missed or slipped item in level mode
+  if (mode === "levels" && state === "play" && ChaiLevels.kettleLost(cur, b.kind)) { levelFail("kettle"); return; }
+  addMiss();
+}
+
+// level goal met? (the last counted item must also have settled: see the frame loop)
+function goalMet() {
+  const k = cur.goal === "kettle" && items.some(b => b.kind === "kettle" && b.counted && !b.fallen);
+  return ChaiLevels.goalReached(cur, { count, perfects, kettleStoodSteps: k && kettleLandedStep !== null ? physSteps - kettleLandedStep : null });
+}
+
+// level wind: scheduled in physics steps from the level seed, so a boss level is the same on every attempt
+function showGust(dir) {
+  windEl.textContent = dir > 0 ? "💨 Hawa chali! →" : "← Hawa chali! 💨"; windEl.classList.add("show"); sfx.whoosh();
+}
+function gustDir(seed, k) { const r = rng(seed); let v = 0; for (let i = 0; i <= k; i++) v = r(); return v < .5 ? -1 : 1; }
+function levelWind() {
+  const w = cur && cur.wind;
+  if (!w || state !== "play") return 0;
+  if (windArmStep === null) { if (items.length >= w.startDrop) windArmStep = physSteps; else return 0; }
+  const t = physSteps - windArmStep - w.firstStep;
+  if (t < 0) return 0;
+  const k = Math.floor(t / w.everySteps), inGust = t % w.everySteps < w.durSteps;
+  if (k !== gustK) { gustK = k; gustD = gustDir(w.dirSeed, k); }     // direction changes only between gusts
+  const dir = gustD;
+  if (t % w.everySteps === 0) showGust(dir);
+  if (t % w.everySteps === w.durSteps) windEl.classList.remove("show");
+  return inGust ? dir : 0;
+}
+
+function levelClear() {
+  state = "cleared"; endAt = performance.now();
+  const stars = ChaiLevels.starsFor(cur, perfects);
+  const r = ChaiLevels.recordClear(readProg(level), cur.n, stars), first = r.first;
+  saveProg(level, r.prog);
+  lastResult = { stars, perfects, newBest: r.newBest, total: totalStars(r.prog) };
+  track(`clear-${level}-${cur.n}`, `Level clear (${level} ${cur.n})`);
+  if (first) track(`first-clear-${level}-${cur.n}`, `First clear (${level} ${cur.n})`);
+  windEl.classList.remove("show");
+  sfx.clear(); buzz([20, 40, 20]);
+  toast(`LEVEL ${cur.n} CLEAR!`);
+  startConfetti();
+  if (BOT) botNote("clear");
+}
+
+function levelFail(cause) {
+  if (state !== "play") return;
+  state = "falling"; endAt = overAt = performance.now(); endCause = cause;
+  windEl.classList.remove("show");
+  if (cause === "fall") crashFx();
+  else { sfx.land("kettle"); buzz(60); toast(cause === "kettle" ? "Kettle down!" : "Too many misses!"); }
+  track(`fail-${level}-${cur.n}`, `Level fail (${level} ${cur.n})`);
+  if (BOT) botNote("fail");
+}
+
+// how close was it? phrased per goal type
+function failText() {
+  if (endCause === "kettle") return { title: "Kettle down!", msg: "The heavy kettle has to stay on the tower. Drop it dead centre!" };
+  if (endCause === "miss") return { title: "Too many misses", msg: `Only ${cur.maxMiss === 0 ? "perfect landings" : cur.maxMiss + " miss" + (cur.maxMiss > 1 ? "es" : "")} allowed here. You stacked ${Math.max(0, count)}.` };
+  const need = cur.target - Math.max(0, count);
+  if (need > 0) {
+    const close = Math.max(0, count) >= cur.target / 2;
+    return { title: close ? "So close!" : "Tower fell!", msg: `${need} more ${need === 1 ? "item" : "items"} to go.` };
+  }
+  if (perfects < cur.perfects) { const n = cur.perfects - perfects; return { title: "So close!", msg: `${n} more perfect ${n === 1 ? "drop" : "drops"} needed.` }; }
+  return { title: "So close!", msg: cur.goal === "kettle" ? "The kettle won this time." : "The tower fell just before the end." };
+}
+
+function crashFx() { engine.timing.timeScale = .28; sfx.crash(); buzz([40, 30, 80]); toast("NAHIII! 😱"); }
+
 function gameOver() {
+  if (mode === "levels") { levelFail("fall"); return; }
   state = "falling"; overAt = performance.now();
-  engine.timing.timeScale = .28;
-  sfx.crash(); buzz([40, 30, 80]);
-  toast("NAHIII! 😱");
+  crashFx();
   const score = count + bonus;
-  track(`over-${level}-${scoreBucket(score)}`, `Game over (${level}): ${scoreBucket(score)} high`);
-  const best = Math.max(+store.get(bestKey()) || 0, score);
+  track(`over-daily-${scoreBucket(score)}`, `Daily game over: ${scoreBucket(score)} high`);
+  if (BOT) botLog.results.push({ level, daily: true, count, perfects });
+  const prevBest = +store.get(bestKey()) || 0, best = Math.max(prevBest, score);
   store.set(bestKey(), best);
+  document.getElementById("over").classList.toggle("milestone", score > prevBest && score > 0);
+  document.getElementById("overDaily").textContent = `Daily #${DAILY}`;
   document.getElementById("final").textContent = score;
   document.getElementById("perf").textContent = `🔥 ${perfects} perfect`;
   document.getElementById("best").textContent = `🏆 Best ${best}`;
@@ -529,17 +718,23 @@ let last = performance.now(), physAcc = 0;
 const STEP = 1000 / 60;
 function frame(now) {
   const dt = Math.min(50, now - last); last = now;
-  if (state === "play" || state === "falling") {
+  if (state === "play" || state === "falling" || state === "cleared") {
     swingT += swingSpeed() * dt / 1000;
-    // wind gusts after 20 items
-    if (state === "play" && now > nextWindAt) { windDir = Math.random() < .5 ? -1 : 1; windUntil = now + 1600; nextWindAt = now + 6500 + Math.random() * 3000;
-      windEl.textContent = windDir > 0 ? "💨 Hawa chali! →" : "← Hawa chali! 💨"; windEl.classList.add("show"); sfx.whoosh(); }
-    if (now > windUntil) windEl.classList.remove("show");
+    // Daily: wind gusts after 20 items (real time)
+    if (mode === "daily" && state === "play" && now > nextWindAt) { windDir = Math.random() < .5 ? -1 : 1; windUntil = now + 1600; nextWindAt = now + 6500 + Math.random() * 3000;
+      showGust(windDir); }
+    if (mode === "daily" && now > windUntil) windEl.classList.remove("show");
     physAcc += dt;
     let steps = 0;
     while (physAcc >= STEP && steps < 4) {                       // physics runs at real time, whatever the screen's refresh rate
-      if (now <= windUntil) for (const b of items) if (!b.fallen && !b.isStatic) Body.applyForce(b, b.position, { x: windDir * b.mass * .00011, y: 0 });
+      const gust = mode === "levels" ? levelWind() : (now <= windUntil ? windDir : 0);
+      if (gust) for (const b of items) if (!b.fallen && !b.isStatic) Body.applyForce(b, b.position, { x: gust * b.mass * .00011, y: 0 });
       Engine.update(engine, STEP);
+      physSteps++;
+      if (mode === "levels" && state === "play" && lastCounted) {
+        settleSteps = (lastCounted.counted && lastCounted.speed < .3) ? settleSteps + 1 : 0;
+        if (settleSteps >= 18 && goalMet()) levelClear();          // goal met and last item settled ~0.3 s
+      }
       physAcc -= STEP; steps++;
     }
     if (steps === 4) physAcc = 0;                                 // way behind (tab was hidden): don't spiral
@@ -551,21 +746,44 @@ function frame(now) {
       } else if (b.landed && !b.miss && b.bounds.min.y < top) top = b.bounds.min.y;
       if (state === "play" && b.counted && !b.isBase && !b.isStatic && b.speed < .3 && b.bounds.max.y > trayY - 12) {
         b.counted = false; b.miss = true; count--; bonus -= ITEMS[b.kind].bonus || 0; combo = 0;
-        toast("Slipped! −1"); updateHud();
+        toast("Slipped! −1"); updateHud(); loseItem(b);
       }
     }
     topY = top;
-    if (state === "falling" && now - overAt > 1700) { state = "over"; document.getElementById("over").classList.remove("hidden"); }
-    if (BOT && state === "play") {                               // aim for the centre of the tower top
-      const sup = support(); if (params.get("bot") === "random" ? Math.random() < .03 : Math.abs(swingX() - sup.position.x) < BOT_SKILL) drop();
+    if (state === "falling" && now - overAt > (endCause === "fall" || !endCause ? 1700 : 900)) {
+      state = "over";
+      if (mode === "levels") showFail(); else document.getElementById("over").classList.remove("hidden");
     }
+    if (state === "cleared" && !cardShown && now - endAt > 1400) { cardShown = true; showClear(); }
+    if (BOT && state === "play") botStep(now);
   }
-  if (BOT && state === "over" && now - overAt > 2600) { document.getElementById("over").classList.add("hidden"); reset(); }
+  if (BOT && mode === "daily" && state === "over" && now - overAt > 2600) { document.getElementById("over").classList.add("hidden"); reset(); }
   // camera follows the tower top
   const target = Math.min(trayY + 120 - LH, topY - LH * .48);   // trayY + 120 - LH = 0 unless the screen size changed
   camTop += (target - camTop) * Math.min(1, dt / 220);
   render();
+  drawConfetti(dt);
   requestAnimationFrame(frame);
+}
+
+// ---------- confetti (milestones only) ----------
+let confetti = [];
+function startConfetti() {
+  const cols = ["#ffcf3f", "#ff7a59", "#ffb4c8", "#8fe3c3", "#fff4e0", "#f2a64a"];
+  confetti = Array.from({ length: 90 }, (_, i) => ({
+    x: innerWidth / 2 + (Math.random() - .5) * 80, y: innerHeight * .35,
+    vx: (Math.random() - .5) * 9, vy: -Math.random() * 9 - 4, r: Math.random() * 6.28, vr: (Math.random() - .5) * .3,
+    w: 5 + Math.random() * 6, h: 8 + Math.random() * 8, c: cols[i % cols.length], life: 1 }));
+}
+function drawConfetti(dt) {
+  if (!confetti.length) return;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  for (const c of confetti) {
+    c.vy += .28 * dt / 16.7; c.x += c.vx * dt / 16.7; c.y += c.vy * dt / 16.7; c.r += c.vr; c.life -= dt / 2600;
+    ctx.save(); ctx.globalAlpha = Math.max(0, Math.min(1, c.life * 2)); ctx.translate(c.x, c.y); ctx.rotate(c.r);
+    ctx.fillStyle = c.c; ctx.fillRect(-c.w / 2, -c.h / 2, c.w, c.h); ctx.restore();
+  }
+  confetti = confetti.filter(c => c.life > 0 && c.y < innerHeight + 40);
 }
 
 const hudEl = document.getElementById("hud");
@@ -606,34 +824,108 @@ function render() {
 }
 
 // ---------- input & screens ----------
-function onTap(e) { if (e.target.closest && e.target.closest(".overlay")) return; e.preventDefault(); audio(); drop(); }
+function onTap(e) { if (e.target.closest && e.target.closest(".overlay, .hudbtns")) return; e.preventDefault(); audio(); drop(); }
 addEventListener("pointerdown", onTap, { passive: false });
-addEventListener("keydown", e => { if (e.code === "Space") { audio(); drop(); } });
+addEventListener("keydown", e => {
+  if (e.code !== "Space") return;
+  if (e.target.closest && e.target.closest("button, a")) { e.preventDefault(); e.target.blur(); }   // no double action on a focused button
+  else e.preventDefault();
+  audio(); drop();
+});
+const OVERLAYS = ["start", "over", "clear", "fail"];
+function hideOverlays() { for (const id of OVERLAYS) document.getElementById(id).classList.add("hidden"); }
 function start() {
   audio();
-  track(`start-${level}`, `Game started (${level})`);
-  document.getElementById("start").classList.add("hidden");
-  document.getElementById("over").classList.add("hidden");
+  hideOverlays();
+  document.getElementById("hudBtns").classList.toggle("show", mode === "levels");
+  confetti = [];
   document.getElementById("hud").style.display = "";
   reset();
+  if (mode === "levels") {
+    track(`level-start-${level}-${cur.n}`, `Level start (${level} ${cur.n})`);
+    if (BOT) botAttempt();
+    showGoal();
+  } else track("daily-start", "Daily started");
 }
-for (const btn of document.querySelectorAll("[data-level]"))
-  btn.onclick = () => { level = btn.dataset.level; artReady.then(start); };
-document.getElementById("again").onclick = start;
-document.getElementById("change").onclick = () => {
-  document.getElementById("over").classList.add("hidden");
+let goalTimer = 0;
+function showGoal() {
+  document.getElementById("goalLv").textContent = `${LEVELS[level].name} · Level ${cur.n}`;
+  document.getElementById("goalTx").textContent = ChaiLevels.goalText(cur);
+  goalEl.classList.add("show"); clearTimeout(goalTimer);
+  goalTimer = setTimeout(() => goalEl.classList.remove("show"), 2200);
+}
+function starRow(n) { return "★★★".slice(0, n) + "☆☆☆".slice(0, 3 - n); }
+function showClear() {
+  const r = lastResult, isFinal = cur.n >= ChaiLevels.COUNT;
+  document.getElementById("clearDiff").textContent = LEVELS[level].name;
+  document.getElementById("clearTitle").textContent = isFinal ? "ALL 30 CLEARED!" : `LEVEL ${cur.n} CLEAR!`;
+  document.getElementById("clearStars").textContent = starRow(r.stars);
+  document.getElementById("clearHint").textContent = r.stars < 3 ? `3 stars: ${cur.stars[2]} perfect drops` : "Perfect level! ✨";
+  document.getElementById("clearPerf").textContent = `🔥 ${r.perfects} perfect`;
+  document.getElementById("clearTotal").textContent = `⭐ ${r.total} total`;
+  const next = document.getElementById("next");
+  next.textContent = isFinal ? "↺ Replay level 30" : "Next level ▶";
+  document.getElementById("replay").style.display = isFinal ? "none" : "";
+  document.getElementById("clear").classList.toggle("milestone", r.stars === 3 || r.newBest);
+  document.getElementById("clear").classList.remove("hidden");
+  if (BOT) botAfterCard("clear");
+}
+function showFail() {
+  const f = failText();
+  document.getElementById("failDiff").textContent = LEVELS[level].name;
+  document.getElementById("failTitle").textContent = f.title;
+  document.getElementById("failMsg").textContent = f.msg;
+  document.getElementById("failGoal").textContent = `Level ${cur.n} · ${ChaiLevels.goalText(cur)}`;
+  document.getElementById("fail").classList.remove("hidden");
+  if (BOT) botAfterCard("fail");
+}
+function showStart() {
+  hideOverlays();
   document.getElementById("hud").style.display = "none";
-  bestTopY = null; showBests(); reset(); state = "idle";
+  document.getElementById("hudBtns").classList.remove("show");
+  goalEl.classList.remove("show"); windEl.classList.remove("show");
+  bestTopY = null; refreshStart(); reset(); state = "idle";
   document.getElementById("start").classList.remove("hidden");
-};
-function showBests() {                                         // "Best 23" on each level button
-  for (const k of Object.keys(LEVELS)) { const b = +store.get(bestKey(k)) || 0;
-    document.getElementById("best_" + k).textContent = b ? `Best ${b}` : ""; }
 }
-showBests();
+function playLevel(diff, n) { mode = "levels"; level = diff; levelN = ChaiLevels.clampN(n); store.set("ct_last", diff); picks[diff] = levelN; artReady.then(start); }
+function playDaily() { mode = "daily"; level = "moderate"; artReady.then(start); }
+const picks = {}, seenMax = {};                                // level chosen in each difficulty's picker
+const unlocked = p => p.done ? ChaiLevels.COUNT : p.next;
+function refreshStart() {
+  const lastDiff = store.get("ct_last"), primary = LEVELS[lastDiff] ? lastDiff : "easy";
+  const box = document.getElementById("diffs");
+  box.innerHTML = "";
+  for (const diff of Object.keys(LEVELS)) {
+    const p = readProg(diff), max = unlocked(p);
+    if (seenMax[diff] !== max) { picks[diff] = max; seenMax[diff] = max; }   // progress moved: point at the next unbeaten level
+    if (!picks[diff] || picks[diff] > max) picks[diff] = max;
+    const n = picks[diff], st = +p.stars[n] || 0, ts = totalStars(p);
+    const meta = p.done ? `All cleared · ⭐ ${ts}` : `Level ${p.next}${ts ? ` · ⭐ ${ts}` : ""}`;
+    const row = document.createElement("div");
+    row.className = "diff" + (diff === primary ? " primary" : "");
+    row.innerHTML = `<button class="diff-main" data-level="${diff}">${LEVELS[diff].name}<small>${meta}</small></button>
+      <div class="picker"><button class="pk" data-step="-1" aria-label="Previous level" ${n <= 1 ? "disabled" : ""}>◀</button>
+      <span class="pkl">Lv ${n}<i>${st ? starRow(st) : ""}</i></span>
+      <button class="pk" data-step="1" aria-label="Next level" ${n >= max ? "disabled" : ""}>▶</button></div>`;
+    row.querySelector(".diff-main").onclick = () => playLevel(diff, picks[diff]);
+    for (const b of row.querySelectorAll(".pk")) b.onclick = () => { picks[diff] = Math.min(max, Math.max(1, picks[diff] + +b.dataset.step)); refreshStart(); };
+    box.appendChild(row);
+  }
+  const db = +store.get(bestKey("moderate")) || 0;
+  document.getElementById("dailyBest").textContent = db ? `Best ${db}` : "";
+}
+document.getElementById("daily").onclick = playDaily;
+document.getElementById("hudRestart").onclick = () => { if (mode === "levels" && cur) replayLevel(); };
+document.getElementById("again").onclick = start;
+document.getElementById("next").onclick = () => playLevel(level, cur.n >= ChaiLevels.COUNT ? cur.n : cur.n + 1);
+const replayLevel = () => playLevel(level, cur.n);
+document.getElementById("replay").onclick = replayLevel;
+document.getElementById("retry").onclick = replayLevel;
+for (const id of ["clearMenu", "failMenu", "change", "hudMenu"]) document.getElementById(id).onclick = showStart;
+refreshStart();
 function shareText() {
   const url = location.href.split(/[?#]/)[0].replace(/index\.html$/, "");
-  return { url, text: `☕ Chai Tower: ${count + bonus} high on ${L.name}!\nDaily #${DAILY} · 🔥 ${perfects} perfect drops\nCan you beat me? 👉 ${url}` };
+  return { url, text: `☕ Chai Tower Daily #${DAILY}: ${count + bonus} high!\n🔥 ${perfects} perfect drops\nCan you beat me? 👉 ${url}` };
 }
 function copyText(t) {                                        // works on http:// too (old-style copy as a fallback)
   if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t).then(() => true, () => legacyCopy(t));
@@ -663,6 +955,39 @@ document.getElementById("copy").onclick = async e => {
   track("copy", "Copy tapped");
   shareMsg.textContent = ok ? "Copied! ✅ Paste it anywhere" : "Couldn't copy, take a screenshot 📸";
 };
+
+// ---------- test bot (only with ?bot=...) ----------
+// ?mode=levels&level=easy&n=1&auto=1&cap=3&bot=human&seed=4  -> plays levels; results in botLog for the test harness
+const botLog = { attempts: {}, results: [], stopped: false, stopReason: "" };
+const botKind = params.get("bot");
+const botRand = rng(+(params.get("seed") || 1) * 104729);
+let botPlan = null;
+const botErr = +(params.get("err") || 22);   // calibrated: median collapse ≈ 4 on the Moderate Daily, like early testers
+function botStep(now) {
+  const sup = support();
+  if (botKind === "random") { if (Math.random() < .03) drop(); return; }
+  if (botKind === "human") {                                    // a casual human: aims roughly, taps a little late
+    if (!botPlan) botPlan = { off: (botRand() * 2 - 1) * botErr, fireAt: 0 };   // aims at the tower, off by up to botErr px
+    const aim = Math.max(LW / 2 - swingAmp() + 3, Math.min(LW / 2 + swingAmp() - 3, sup.position.x + botPlan.off));
+    if (!botPlan.fireAt && Math.abs(swingX() - aim) < 4) botPlan.fireAt = now + botRand() * 120;   // humans pre-empt the swing: small timing error
+    if (botPlan.fireAt && now >= botPlan.fireAt) { const n = items.length; drop(); if (items.length > n) botPlan = null; else botPlan.fireAt = 0; }
+    return;
+  }
+  if (Math.abs(swingX() - sup.position.x) < BOT_SKILL) drop();
+}
+const botKey = () => `${level}-${levelN}`;
+function botAttempt() { botLog.attempts[botKey()] = (botLog.attempts[botKey()] || 0) + 1; }
+function botNote(kind) { botLog.results.push({ level, n: cur.n, kind, count, perfects, misses }); }
+function botAfterCard(kind) {
+  const cap = +(params.get("cap") || 3);
+  setTimeout(() => {
+    if (kind === "clear") {
+      if (params.has("auto") && cur.n < ChaiLevels.COUNT && !(params.get("upto") && cur.n >= +params.get("upto"))) playLevel(level, cur.n + 1);
+      else { botLog.stopped = true; botLog.stopReason = "done"; }
+    } else if ((botLog.attempts[botKey()] || 0) < cap) playLevel(level, cur.n);
+    else { botLog.stopped = true; botLog.stopReason = `cap at ${botKey()}`; }
+  }, 700);
+}
 
 // start-card picture: kulhad of chai, biscuit packet, samosa, gently wobbling
 const heroCv = document.getElementById("hero");
