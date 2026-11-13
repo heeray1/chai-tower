@@ -113,6 +113,20 @@ resize();
 const params = new URLSearchParams(location.search);
 const BOT = params.has("bot");
 const BOT_SKILL = +(params.get("bot") || 3);   // ?bot=3 = aims within 3 px       // auto-player for testing / recording Shorts footage
+// ---------- visitor counter (GoatCounter: no cookies, no personal data). Off for bot runs. ----------
+// Remove this block for CrazyGames / YouTube Playables builds: they forbid outside scripts and calls.
+const GC_URL = "https://chaitower.goatcounter.com/count";
+if (!BOT && !/^(localhost|127\.|192\.168\.)/.test(location.hostname)) {
+  const sc = document.createElement("script");
+  sc.async = true; sc.src = "https://gc.zgo.at/count.js"; sc.dataset.goatcounter = GC_URL;
+  document.head.appendChild(sc);
+}
+function track(name, title) {
+  if (BOT) return;
+  try { if (window.goatcounter && window.goatcounter.count) window.goatcounter.count({ path: name, title: title || name, event: true }); } catch {}
+}
+const scoreBucket = n => n >= 30 ? "30+" : n >= 20 ? "20-29" : n >= 10 ? "10-19" : n >= 5 ? "5-9" : "0-4";
+
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch {} },
@@ -500,6 +514,7 @@ function gameOver() {
   sfx.crash(); buzz([40, 30, 80]);
   toast("NAHIII! 😱");
   const score = count + bonus;
+  track(`over-${level}-${scoreBucket(score)}`, `Game over (${level}): ${scoreBucket(score)} high`);
   const best = Math.max(+store.get(bestKey()) || 0, score);
   store.set(bestKey(), best);
   document.getElementById("final").textContent = score;
@@ -596,6 +611,7 @@ addEventListener("pointerdown", onTap, { passive: false });
 addEventListener("keydown", e => { if (e.code === "Space") { audio(); drop(); } });
 function start() {
   audio();
+  track(`start-${level}`, `Game started (${level})`);
   document.getElementById("start").classList.add("hidden");
   document.getElementById("over").classList.add("hidden");
   document.getElementById("hud").style.display = "";
@@ -633,6 +649,7 @@ function legacyCopy(t) {
 const shareMsg = document.getElementById("shareMsg");
 document.getElementById("share").onclick = async () => {
   const { text, url } = shareText();
+  track("share", "Share tapped");
   if (navigator.share && window.isSecureContext) {             // phones on https: the normal share sheet
     try { await navigator.share({ text }); shareMsg.textContent = "Shared! 🎉"; return; }
     catch (e) { if (e && e.name === "AbortError") return; }      // user closed the sheet
@@ -643,6 +660,7 @@ document.getElementById("share").onclick = async () => {
 document.getElementById("copy").onclick = async e => {
   e.preventDefault();
   const ok = await copyText(shareText().text);
+  track("copy", "Copy tapped");
   shareMsg.textContent = ok ? "Copied! ✅ Paste it anywhere" : "Couldn't copy, take a screenshot 📸";
 };
 
