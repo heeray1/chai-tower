@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#3a1d12">
+<title>Chai Tower</title>
+<meta name="description" content="Stack the chai stall as high as you can! Kulhads, samosas, biscuits and one very heavy kettle. A new daily stack every day.">
+<meta property="og:title" content="Chai Tower ☕ Can you beat my stack?">
+<meta property="og:description" content="Tap to drop. Stack kulhads, samosas and biscuits as high as you can. New daily stack every day!">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://heeray1.github.io/chai-tower/">
+<meta property="og:image" content="https://heeray1.github.io/chai-tower/assets/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="assets/icon.png">
+<link rel="apple-touch-icon" href="assets/icon.png">
+<style>
+  :root { --cream: #fff4e0; --brown: #3a1d12; --chai: #c8843c; --red: #e2463b; --gold: #ffcf3f; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #2a1409; touch-action: none;
+    font-family: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", sans-serif; user-select: none; -webkit-user-select: none; }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  .hud { position: fixed; top: max(14px, env(safe-area-inset-top)); left: 0; right: 0; text-align: center; pointer-events: none; color: #fff;
+    text-shadow: 0 3px 0 rgba(0,0,0,.35); }
+  .hud .score { font-size: 64px; font-weight: 900; line-height: 1; }
+  .hud .sub { font-size: 15px; font-weight: 700; opacity: .9; margin-top: 4px; }
+  .overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px;
+    background: rgba(30, 12, 4, .55); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+  .overlay.hidden { display: none; }
+  .card { width: min(360px, 100%); background: var(--cream); color: var(--brown); border-radius: 28px; padding: 26px 22px 20px; text-align: center;
+    box-shadow: 0 10px 0 #b9773c, 0 24px 50px rgba(0,0,0,.35); }
+  .card h1 { margin: 0; font-size: 42px; font-weight: 900; letter-spacing: -1px; }
+  .card h1 span { color: var(--red); }
+  .card p { margin: 10px 0 0; font-size: 17px; font-weight: 600; line-height: 1.35; }
+  .card .big { font-size: 72px; font-weight: 900; color: var(--red); line-height: 1; margin-top: 8px; }
+  .card .row { display: flex; justify-content: center; gap: 18px; margin-top: 10px; font-weight: 800; font-size: 16px; }
+  .btn { display: block; width: 100%; margin-top: 16px; padding: 15px; border: 0; border-radius: 18px; font: inherit; font-size: 21px; font-weight: 900;
+    color: #fff; background: var(--red); box-shadow: 0 6px 0 #9e2a22; cursor: pointer; }
+  .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #9e2a22; }
+  .btn.alt { background: #2f8f5b; box-shadow: 0 6px 0 #1d5e3a; }
+  .tiny { font-size: 13px !important; opacity: .7; margin-top: 12px !important; }
+  .toast { position: fixed; left: 50%; top: 32%; transform: translate(-50%, -50%); font-size: 40px; font-weight: 900; color: var(--gold);
+    text-shadow: 0 4px 0 #8a4b10, 0 0 18px rgba(255,200,60,.6); pointer-events: none; opacity: 0; transition: opacity .15s; white-space: nowrap; }
+  .toast.show { opacity: 1; }
+  .wind { position: fixed; top: 46%; width: 100%; text-align: center; font-size: 28px; font-weight: 900; color: #e8f4ff; opacity: 0;
+    text-shadow: 0 3px 0 rgba(0,0,0,.3); pointer-events: none; transition: opacity .3s; }
+  .wind.show { opacity: .95; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hud" id="hud" style="display:none"><div class="score" id="score">0</div><div class="sub" id="sub"></div></div>
+<div class="toast" id="toast">PERFECT!</div>
+<div class="wind" id="wind">💨 Hawa chali!</div>
+
+<div class="overlay" id="start">
+  <div class="card">
+    <h1>Chai <span>Tower</span> ☕</h1>
+    <p>Tap to drop. Stack the chai stall as high as you can!</p>
+    <p class="tiny" id="dailyLabel"></p>
+    <button class="btn" id="play">Play</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="over">
+  <div class="card">
+    <h1>NAHIII! 😱</h1>
+    <div class="big" id="final">0</div>
+    <p style="margin-top:2px">items high</p>
+    <div class="row"><span id="perf">🔥 0 perfect</span><span id="best">🏆 Best 0</span></div>
+    <button class="btn" id="again">One more! ☕</button>
+    <button class="btn alt" id="share">Share score 💬</button>
+    <p class="tiny"><a href="#" id="copy" style="color:inherit;font-weight:800">Copy score</a> <span id="shareMsg"></span></p>
+  </div>
+</div>
+
+<script src="vendor/matter.min.js"></script>
+<script>
+"use strict";
+const { Engine, Bodies, Body, Composite, Events } = Matter;
+
+// ---------- setup ----------
+const cv = document.getElementById("c");
+const ctx = cv.getContext("2d");
+const LW = 400;                    // logical world width
+let S = 1, LH = 700, DPR = 1, OX = 0;
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 3);
+  cv.width = Math.round(innerWidth * DPR);
+  cv.height = Math.round(innerHeight * DPR);
+  S = Math.min(innerWidth / LW, innerHeight / 700, 1.6);   // fit width and height (phones, tablets, laptops)
+  OX = (innerWidth - LW * S) / 2;
+  LH = innerHeight / S;
+  const k = Math.max(1, S);                                      // bigger screens: bigger score + toasts
+  for (const id of ["hud", "toast", "wind"]) { const el = document.getElementById(id); if (el) el.style.zoom = k; }
+}
+addEventListener("resize", resize);
+resize();
+
+const params = new URLSearchParams(location.search);
+const BOT = params.has("bot");
+const BOT_SKILL = +(params.get("bot") || 3);   // ?bot=3 = aims within 3 px       // auto-player for testing / recording Shorts footage
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+};
+
+// daily item order: same for everyone each day
+const DAY0 = Date.UTC(2026, 10, 1);
+const DAILY = Math.max(1, Math.floor((Date.now() - DAY0) / 86400000) + 1);
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+document.getElementById("dailyLabel").textContent = `Daily #${DAILY} · same stack for everyone today`;
+
+// ---------- items ----------
+function poly(pts) { return pts.map(([x, y]) => ({ x, y })); }
+const ITEMS = {
+  kulhad:  { w: 46, h: 42, shape: "trap", top: 46, bot: 37, color: "#b5562f", dark: "#7d3518", density: .0016, weight: 4 },
+  glass:   { w: 30, h: 56, shape: "rect", color: "#f3e3c8", dark: "#a8763a", density: .0011, weight: 3 },
+  biscuit: { w: 92, h: 22, shape: "rect", color: "#f2c230", dark: "#b8860b", density: .0012, weight: 3 },
+  samosa:  { w: 62, h: 36, shape: "trap", top: 28, bot: 62, color: "#dc9a3e", dark: "#9a5d18", density: .0014, weight: 2, friction: 1 },
+  tumbler: { w: 40, h: 48, shape: "rect", color: "#c9a24a", dark: "#7a5a18", density: .0018, weight: 3 },
+  rusk:    { w: 62, h: 18, shape: "rect", color: "#e0a85a", dark: "#9c6a2a", density: .0012, weight: 3 },
+  bun:     { w: 56, h: 30, shape: "round", color: "#e7b778", dark: "#a5702f", density: .0010, weight: 3 },
+  kettle:  { w: 60, h: 50, shape: "rect", color: "#d6453b", dark: "#7c1d17", density: .0024, weight: 1, after: 8 },
+  golden:  { w: 46, h: 42, shape: "trap", top: 46, bot: 37, color: "#ffcf3f", dark: "#b8860b", density: .0016, weight: 0, bonus: 5 },
+};
+const POOL = Object.entries(ITEMS).flatMap(([k, d]) => Array(d.weight).fill(k));
+
+// ---------- art (glossy 3D sprites in assets/; the vector drawing below is only a fallback) ----------
+// size: the item's height (or width for flat items) in world units; the other side comes from the picture's shape
+const FIT = {
+  kulhad: { h: 46, bot: .74 }, golden: { h: 48, bot: .62 }, glass: { h: 60, bot: .86 }, biscuit: { w: 98 },
+  samosa: { h: 46, top: .30 }, tumbler: { h: 52, bot: .8 }, rusk: { w: 74 }, bun: { w: 64 }, kettle: { h: 56 },
+};
+const SPRITES = {};
+let stallImg = null;
+function loadImg(src) { return new Promise(res => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = src; }); }
+const USE_ITEM_ART = false;   // user prefers the clean 2D items (easier to read against the stall backdrop)
+const artReady = Promise.all([
+  ...Object.keys(FIT).filter(() => USE_ITEM_ART).map(async k => { const im = await loadImg(`assets/${k}.png`); if (im) SPRITES[k] = im; }),
+  loadImg("assets/stall.jpg").then(im => { stallImg = im; }),
+]).then(() => {
+  for (const [k, f] of Object.entries(FIT)) {
+    const im = SPRITES[k], d = ITEMS[k]; if (!im) continue;
+    const ar = im.naturalWidth / im.naturalHeight;
+    if (f.h) { d.h = f.h; d.w = Math.round(f.h * ar); } else { d.w = f.w; d.h = Math.round(f.w / ar); }
+    if (d.shape === "trap") { d.top = f.top ? d.w * f.top : d.w; d.bot = f.bot ? d.w * f.bot : d.w; }
+    if (f.bot && d.shape === "rect") { d.shape = "trap"; d.top = d.w; d.bot = d.w * f.bot; }
+  }
+});
+
+function makeBody(kind, x, y) {
+  const d = ITEMS[kind];
+  const opt = { friction: d.friction ?? .9, frictionStatic: 1.2, restitution: 0, density: d.density, slop: .02 };
+  let b;
+  if (d.shape === "trap") {
+    const t = d.top / 2, bo = d.bot / 2, h = d.h / 2;
+    b = Bodies.fromVertices(x, y, [poly([[-t, -h], [t, -h], [bo, h], [-bo, h]])], opt);
+  } else if (d.shape === "tri") {
+    b = Bodies.fromVertices(x, y, [poly([[0, -d.h / 2], [d.w / 2, d.h / 2], [-d.w / 2, d.h / 2]])], opt);
+  } else if (d.shape === "round") {
+    b = Bodies.rectangle(x, y, d.w, d.h, { ...opt, chamfer: { radius: [14, 14, 6, 6] } });
+  } else {
+    b = Bodies.rectangle(x, y, d.w, d.h, opt);
+  }
+  b.kind = kind;
+  b.drawDY = (b.bounds.min.y + b.bounds.max.y) / 2 - b.position.y;   // picture centre vs centroid (angle 0)
+  return b;
+}
+
+// ---------- drawing ----------
+function pathVerts(b) {
+  ctx.beginPath();
+  b.vertices.forEach((v, i) => i ? ctx.lineTo(v.x, v.y) : ctx.moveTo(v.x, v.y));
+  ctx.closePath();
+}
+function drawItem(b, alpha = 1) {
+  const d = ITEMS[b.kind];
+  const im = SPRITES[b.kind];
+  if (im) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(b.position.x, b.position.y);
+    ctx.rotate(b.angle);
+    ctx.drawImage(im, -d.w / 2, b.drawDY - d.h / 2, d.w, d.h);
+    if (b.kind === "golden") { ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = alpha * (.25 + .2 * Math.sin(performance.now() / 160));
+      ctx.drawImage(im, -d.w / 2, b.drawDY - d.h / 2, d.w, d.h); }
+    ctx.restore();
+    return;
+  }
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  pathVerts(b);
+  ctx.save();
+  ctx.clip();
+  // shading is drawn in the item's own frame; (0, cy) is the middle of its outline
+  ctx.translate(b.position.x, b.position.y);
+  ctx.rotate(b.angle);
+  const w = d.w, h = d.h, cy = b.drawDY || 0, top = cy - h / 2, bot = cy + h / 2, L = -w / 2 - 2, W = w + 4;
+  const cyl = (c, hi = .35, lo = .4) => {                     // rounded "cylinder" light: dark edges, bright left-of-centre
+    const g = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
+    g.addColorStop(0, shade(c, -lo)); g.addColorStop(.28, shade(c, hi)); g.addColorStop(.55, c); g.addColorStop(1, shade(c, -lo * 1.2));
+    ctx.fillStyle = g; ctx.fillRect(L, top - 2, W, h + 4);
+  };
+  const vert = (c, hi = .3, lo = .35) => {                    // top-lit flat things
+    const g = ctx.createLinearGradient(0, top, 0, bot);
+    g.addColorStop(0, shade(c, hi)); g.addColorStop(.5, c); g.addColorStop(1, shade(c, -lo));
+    ctx.fillStyle = g; ctx.fillRect(L, top - 2, W, h + 4);
+  };
+  const metal = (c) => {                                      // banded metallic sheen
+    const g = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
+    [[0, -.45], [.15, .1], [.3, .55], [.42, -.05], [.62, .25], [.8, -.25], [1, -.5]].forEach(([t, a]) => g.addColorStop(t, shade(c, a)));
+    ctx.fillStyle = g; ctx.fillRect(L, top - 2, W, h + 4);
+  };
+  const dots = (n, r, col, seed) => {                         // fixed texture speckles
+    ctx.fillStyle = col; let k = seed;
+    for (let i = 0; i < n; i++) { k = (k * 9301 + 49297) % 233280; const px = (k / 233280 - .5) * w * .8;
+      k = (k * 9301 + 49297) % 233280; const py = top + h * (.2 + .7 * k / 233280);
+      ctx.beginPath(); ctx.arc(px, py, r, 0, 7); ctx.fill(); }
+  };
+  const gloss = (x, wd, a = .5) => { const g = ctx.createLinearGradient(x, 0, x + wd, 0);
+    g.addColorStop(0, "rgba(255,255,255,0)"); g.addColorStop(.5, `rgba(255,255,255,${a})`); g.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = g; ctx.fillRect(x, top + 3, wd, h - 6); };
+
+  switch (b.kind) {
+    case "kulhad":
+      cyl(d.color, .32, .45); dots(14, .9, "rgba(90,35,12,.35)", 7);
+      ctx.fillStyle = shade(d.color, .25); ctx.fillRect(L, top, W, 5);              // rim catching light
+      ctx.fillStyle = shade(d.color, -.35); ctx.fillRect(L, top + 5, W, 2);
+      gloss(-w * .32, w * .18, .35);
+      break;
+    case "golden":
+      metal("#f2b81f");
+      ctx.fillStyle = "#fff3b0"; ctx.fillRect(L, top, W, 4);
+      ctx.globalAlpha = alpha * (.35 + .3 * Math.sin(performance.now() / 160));
+      ctx.fillStyle = "#fffbe0"; ctx.font = "bold 16px system-ui"; ctx.textAlign = "center"; ctx.fillText("★", 0, cy + 6);
+      ctx.globalAlpha = alpha;
+      break;
+    case "glass": {
+      const g = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);                     // chai seen through glass
+      g.addColorStop(0, "#8d5426"); g.addColorStop(.35, "#d39552"); g.addColorStop(1, "#7a4520");
+      ctx.fillStyle = "rgba(240,248,255,.55)"; ctx.fillRect(L, top - 2, W, h + 4);
+      ctx.fillStyle = g; ctx.fillRect(L, top + h * .24, W, h);
+      ctx.fillStyle = "#f1dcb8"; ctx.fillRect(L, top + h * .24, W, 5);              // froth
+      ctx.fillStyle = "rgba(255,255,255,.35)"; for (let i = 1; i < 4; i++) ctx.fillRect(-w / 2 + i * w / 4 - .5, top + h * .3, 1, h * .62);  // glass facets
+      gloss(-w * .42, w * .22, .7);
+      break;
+    }
+    case "biscuit":
+      vert("#f5c63a", .35, .3);
+      ctx.fillStyle = "#d8352a"; ctx.fillRect(L, cy - 3.5, W, 7);
+      ctx.fillStyle = "rgba(255,255,255,.55)"; ctx.fillRect(L, top + 2, W, 2.5);     // plastic shine
+      ctx.fillStyle = "#fff"; ctx.font = "900 8px system-ui"; ctx.textAlign = "center"; ctx.fillText("BISCUIT", 0, cy - 5);
+      ctx.fillStyle = "rgba(120,70,0,.35)"; for (const sx of [-1, 1]) ctx.fillRect(sx * (w / 2 - 5) - 1, top, 2, h);  // crimped ends
+      break;
+    case "samosa":
+      vert(d.color, .4, .4); dots(18, 1.3, "rgba(255,230,160,.6)", 3); dots(10, 1, "rgba(110,55,10,.45)", 11);
+      ctx.strokeStyle = "rgba(120,60,10,.45)"; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(-w * .18, bot - 3); ctx.quadraticCurveTo(0, cy - 2, w * .18, bot - 3); ctx.stroke();
+      break;
+    case "tumbler":
+      metal("#c9a24a");                                                             // brass
+      ctx.fillStyle = "rgba(255,240,200,.7)"; ctx.fillRect(L, top, W, 3);
+      ctx.fillStyle = "rgba(90,60,10,.35)"; ctx.fillRect(L, top + 5, W, 1.5); ctx.fillRect(L, bot - 6, W, 1.5);
+      break;
+    case "rusk":
+      vert("#e3a95a", .35, .45); dots(12, 1.2, "rgba(110,60,15,.5)", 5);
+      ctx.fillStyle = "rgba(255,235,190,.45)"; ctx.fillRect(L, top + 1, W, 3);
+      break;
+    case "bun": {
+      const g = ctx.createRadialGradient(-w * .15, top + h * .2, 2, 0, cy, w * .7);
+      g.addColorStop(0, "#fbe2a8"); g.addColorStop(.6, "#e3ad62"); g.addColorStop(1, "#a86a2c");
+      ctx.fillStyle = g; ctx.fillRect(L, top - 2, W, h + 4);
+      ctx.fillStyle = "#fff1a6"; ctx.fillRect(L, cy - 1, W, 5);                    // butter
+      ctx.fillStyle = "rgba(255,255,255,.55)"; ctx.fillRect(L, cy - 1, W, 1.5);
+      const hl = ctx.createRadialGradient(-w * .15, top + h * .22, 0, -w * .15, top + h * .22, w * .22);
+      hl.addColorStop(0, "rgba(255,255,255,.45)"); hl.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = hl; ctx.fillRect(L, top - 2, W, h * .6);
+      break;
+    }
+    case "kettle":
+      metal("#d6453b");                                                             // red enamel
+      ctx.fillStyle = "#2b2b2b"; ctx.fillRect(-7, top, 14, 5);                      // lid knob
+      ctx.fillStyle = "rgba(255,255,255,.9)"; ctx.font = "900 10px system-ui"; ctx.textAlign = "center"; ctx.fillText("HEAVY", 0, cy + 5);
+      break;
+    default:
+      cyl(d.color);
+  }
+  // soft contact shade at the bottom
+  const sh = ctx.createLinearGradient(0, bot - 6, 0, bot);
+  sh.addColorStop(0, "rgba(0,0,0,0)"); sh.addColorStop(1, "rgba(0,0,0,.25)");
+  ctx.fillStyle = sh; ctx.fillRect(L, bot - 6, W, 7);
+  ctx.restore();
+  ctx.lineWidth = 2; ctx.strokeStyle = shade(d.dark, -.15); ctx.stroke();       // crisp outline on top
+  ctx.restore();
+}
+
+function shade(hex, amt) {                                    // amt -1..1: darker..lighter
+  const n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, bl = n & 255;
+  const f = c => Math.round(amt < 0 ? c * (1 + amt) : c + (255 - c) * amt);
+  return `rgb(${f(r)},${f(g)},${f(bl)})`;
+}
+
+function lerpColor(a, b, t) {
+  const pa = a.match(/\w\w/g).map(h => parseInt(h, 16)), pb = b.match(/\w\w/g).map(h => parseInt(h, 16));
+  return "#" + pa.map((v, i) => Math.round(v + (pb[i] - v) * t).toString(16).padStart(2, "0")).join("");
+}
+const stars = Array.from({ length: 70 }, (_, i) => ({ x: (i * 97) % LW, y: (i * 233) % 900, r: 1 + (i % 3) * .5 }));
+
+function drawBackground() {
+  const t = Math.min(1, Math.max(0, -camTop / 2600));           // sky darkens as you climb
+  const g = ctx.createLinearGradient(0, 0, 0, innerHeight);
+  g.addColorStop(0, lerpColor("ffb15c", "0b1a3a", t));
+  g.addColorStop(1, lerpColor("ffe2b0", "2b2350", t));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, innerWidth, innerHeight);
+  if (t > .25) {                                                   // stars
+    ctx.fillStyle = `rgba(255,255,255,${(t - .25) * 1.2})`;
+    for (const s of stars) { ctx.beginPath(); ctx.arc(OX + (s.x - 200) * S * 2.5, ((s.y - camTop * .15) % 900) * S, s.r, 0, 7); ctx.fill(); }
+  }
+}
+
+// backdrop: the stall picture, dimmed and faded into the sky at the top (baked once into an offscreen canvas)
+let stallBaked = null;
+const STALL_W = 760, STALL_COUNTER = 540 / 686;          // counter-top line in the picture (fraction of its height)
+function bakeStall() {
+  if (!stallImg || stallBaked) return;
+  const c = document.createElement("canvas"); c.width = stallImg.naturalWidth; c.height = stallImg.naturalHeight;
+  const g = c.getContext("2d");
+  g.drawImage(stallImg, 0, 0);
+  g.globalCompositeOperation = "source-atop"; g.fillStyle = "rgba(45,20,8,.40)"; g.fillRect(0, 0, c.width, c.height);  // dim (keeps the 2D items readable)
+  g.globalCompositeOperation = "destination-in";
+  const fade = g.createLinearGradient(0, 0, 0, c.height);
+  fade.addColorStop(0, "rgba(0,0,0,0)"); fade.addColorStop(.38, "rgba(0,0,0,1)"); fade.addColorStop(1, "rgba(0,0,0,1)");
+  g.fillStyle = fade; g.fillRect(0, 0, c.width, c.height);
+  stallBaked = c;
+}
+function drawStall() {
+  bakeStall();
+  const counterY = trayY + 8;
+  ctx.fillStyle = "#5a2e16"; ctx.fillRect(-1500, counterY, LW + 3000, 700);          // wood below everything
+  if (stallBaked) {
+    const sw = Math.max(STALL_W, innerWidth / S + 40);         // wide screens: stretch to cover the whole width
+    const h = sw * stallBaked.height / stallBaked.width;
+    ctx.drawImage(stallBaked, LW / 2 - sw / 2, counterY - h * STALL_COUNTER, sw, h);
+  } else {
+    ctx.fillStyle = "#8a4d28"; ctx.fillRect(-1500, counterY, LW + 3000, 14);
+  }
+  ctx.fillStyle = "#ffe9c2"; ctx.font = "900 20px system-ui"; ctx.textAlign = "center";
+  ctx.shadowColor = "rgba(0,0,0,.5)"; ctx.shadowBlur = 6;
+  ctx.fillText("☕ CHAI  ₹10 ☕", LW / 2, trayY + 70);
+  ctx.shadowBlur = 0;
+  // steel tray
+  const tg = ctx.createLinearGradient(0, trayY - 8, 0, trayY + 8);
+  tg.addColorStop(0, "#eef1f5"); tg.addColorStop(.5, "#b9c0ca"); tg.addColorStop(1, "#8a929d");
+  ctx.fillStyle = tg; ctx.strokeStyle = "#5f6670"; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.roundRect(LW / 2 - TRAY_W / 2, trayY - 8, TRAY_W, 16, 7); ctx.fill(); ctx.stroke();
+}
+
+// ---------- sound (synthesised, no files) ----------
+let AC = null;
+function audio() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch {} } if (AC && AC.state === "suspended") AC.resume(); return AC; }
+function tone(freq, dur, type = "sine", vol = .25, when = 0) {
+  const a = AC; if (!a) return;
+  const o = a.createOscillator(), g = a.createGain(), t0 = a.currentTime + when;
+  o.type = type; o.frequency.setValueAtTime(freq, t0);
+  g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(.001, t0 + dur);
+  o.connect(g).connect(a.destination); o.start(t0); o.stop(t0 + dur + .02);
+}
+function noise(dur, vol = .35, from = 2500, to = 200) {
+  const a = AC; if (!a) return;
+  const buf = a.createBuffer(1, a.sampleRate * dur, a.sampleRate), ch = buf.getChannelData(0);
+  for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / ch.length);
+  const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain(), t0 = a.currentTime;
+  f.type = "lowpass"; f.frequency.setValueAtTime(from, t0); f.frequency.exponentialRampToValueAtTime(to, t0 + dur);
+  g.gain.setValueAtTime(vol, t0); s.buffer = buf; s.connect(f).connect(g).connect(a.destination); s.start();
+}
+const sfx = {
+  land(kind) { if (kind === "kettle") { tone(140, .18, "triangle", .35); noise(.12, .2, 800, 100); } else { tone(1700 + Math.random() * 400, .12, "triangle", .14); tone(2600, .08, "sine", .06, .01); } },
+  perfect(c) { const b = 660 * Math.pow(1.06, Math.min(c, 12)); tone(b, .12, "sine", .2); tone(b * 1.5, .22, "sine", .18, .08); },
+  crash() { noise(1.1, .4, 3000, 150); for (let i = 0; i < 7; i++) tone(1200 + Math.random() * 1800, .1, "triangle", .1, i * .09 + Math.random() * .05); },
+  whoosh() { noise(.7, .12, 600, 2400); },
+};
+const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch {} };
+
+// ---------- game state ----------
+const TRAY_W = 240;
+let engine, trayY, tray, items, current, topY, camTop, swingT, state, count, bonus, perfects, combo, lastDropAt,
+    nextKind, rand, dropIndex, windUntil, nextWindAt, windDir, overAt, bestTopY = null;
+const toastEl = document.getElementById("toast"), windEl = document.getElementById("wind");
+let toastTimer = 0;
+function toast(text) { toastEl.textContent = text; toastEl.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.classList.remove("show"), 650); }
+
+function pickKind() {
+  dropIndex++;
+  if (dropIndex <= 2) return "kulhad";                      // gentle start
+  if (dropIndex > 5 && rand() < .045) return "golden";
+  let k; do { k = POOL[Math.floor(rand() * POOL.length)]; } while ((ITEMS[k].after || 0) > dropIndex);
+  return k;
+}
+
+function reset() {
+  engine = Engine.create({ positionIterations: 12, velocityIterations: 10, constraintIterations: 4 });
+  engine.gravity.y = 1.25;                                     // a bit snappier fall
+  trayY = LH - 120;
+  tray = Bodies.rectangle(LW / 2, trayY, TRAY_W, 16, { isStatic: true, friction: 1, frictionStatic: 1.5, chamfer: { radius: 6 } });
+  Composite.add(engine.world, tray);
+  items = []; current = null; topY = trayY - 8; camTop = 0; swingT = 0; count = 0; bonus = 0; perfects = 0; combo = 0; lastDropAt = -1e9;
+  rand = rng(DAILY * 7919); dropIndex = 0; nextKind = pickKind();
+  windUntil = 0; nextWindAt = 1e12; windDir = 1; overAt = 0;
+  engine.timing.timeScale = 1;
+  Events.on(engine, "collisionStart", onCollide);
+  state = "play";
+  updateHud();
+}
+
+function support() {                                           // what the new item should land on
+  let best = null;
+  for (const it of items) if (it.landed && !it.miss && !it.fallen && (!best || it.bounds.min.y < best.bounds.min.y)) best = it;
+  return best || tray;
+}
+
+function onCollide(e) {
+  for (const p of e.pairs) for (const b of [p.bodyA, p.bodyB]) {
+    if (!b.kind || b.landed) continue;
+    const other = b === p.bodyA ? p.bodyB : p.bodyA;
+    if (!other.landed && other !== tray) continue;               // must land on the tower
+    b.landed = true;
+    const sup = b.supportRef || tray;
+    const onTower = other === sup || (other.landed && !other.miss && other.bounds.min.y <= topY + 14);
+    if (!onTower) { b.miss = true; combo = 0; sfx.land(b.kind); toast("Miss!"); continue; }
+    const off = Math.abs(b.position.x - sup.position.x);
+    count++; bonus += ITEMS[b.kind].bonus || 0;
+    b.counted = true; b.isBase = sup === tray;
+    if (off < 6) { combo++; perfects++; sfx.perfect(combo); buzz(25); toast(combo > 1 ? `PERFECT ×${combo}!` : "PERFECT!"); }
+    else { combo = 0; sfx.land(b.kind); buzz(10); }
+    if (ITEMS[b.kind].bonus) toast("⭐ GOLDEN +5!");
+    if (count === 20) { nextWindAt = performance.now() + 2500; }
+    freezeBuried();
+    updateHud();
+  }
+}
+
+// only the top few items can wobble: items buried 4+ levels down become solid, like a real stall shelf
+const LIVE_LEVELS = 4;
+function freezeBuried() {
+  const live = items.filter(b => b.landed && !b.fallen && !b.isStatic).sort((a, b) => a.position.y - b.position.y);
+  for (const b of live.slice(LIVE_LEVELS)) {
+    if (b.speed < .6 && b.angularSpeed < .02) Body.setStatic(b, true);
+  }
+}
+
+function drop() {
+  if (state !== "play") return;
+  const now = performance.now();
+  if (now - lastDropAt < 400) return;
+  if (current && !current.landed && now - lastDropAt < 1100) return;   // wait for the last one to land
+  const b = makeBody(nextKind, swingX(), spawnY());
+  b.supportRef = support();
+  Body.setVelocity(b, { x: 0, y: 2.5 });                         // small push down: lands sooner
+  Composite.add(engine.world, b);
+  items.push(b); current = b; lastDropAt = now;
+  nextKind = pickKind();
+}
+
+const swingAmp = () => 118;
+const swingSpeed = () => Math.min(1.7 + count * .055, 4.2);
+const swingX = () => LW / 2 + Math.sin(swingT) * swingAmp();
+const swingVel = () => Math.cos(swingT) * swingAmp() * swingSpeed() / 60;
+const spawnY = () => Math.min(topY, trayY) - 120;
+
+function updateHud() {
+  document.getElementById("score").textContent = count + bonus;
+  const best = +store.get("ct_best") || 0;
+  document.getElementById("sub").textContent = `🏆 ${Math.max(best, count + bonus)}   ·   🔥 ${perfects} perfect`;
+}
+
+function gameOver() {
+  state = "falling"; overAt = performance.now();
+  engine.timing.timeScale = .28;
+  sfx.crash(); buzz([40, 30, 80]);
+  toast("NAHIII! 😱");
+  const score = count + bonus;
+  const best = Math.max(+store.get("ct_best") || 0, score);
+  store.set("ct_best", best);
+  document.getElementById("final").textContent = score;
+  document.getElementById("perf").textContent = `🔥 ${perfects} perfect`;
+  document.getElementById("best").textContent = `🏆 Best ${best}`;
+  document.getElementById("shareMsg").textContent = "";
+  if (bestTopY === null || topY < bestTopY) bestTopY = topY;
+}
+
+// ---------- loop ----------
+let last = performance.now(), physAcc = 0;
+const STEP = 1000 / 60;
+function frame(now) {
+  const dt = Math.min(50, now - last); last = now;
+  if (state === "play" || state === "falling") {
+    swingT += swingSpeed() * dt / 1000;
+    // wind gusts after 20 items
+    if (state === "play" && now > nextWindAt) { windDir = Math.random() < .5 ? -1 : 1; windUntil = now + 1600; nextWindAt = now + 6500 + Math.random() * 3000;
+      windEl.textContent = windDir > 0 ? "💨 Hawa chali! →" : "← Hawa chali! 💨"; windEl.classList.add("show"); sfx.whoosh(); }
+    if (now > windUntil) windEl.classList.remove("show");
+    physAcc += dt;
+    let steps = 0;
+    while (physAcc >= STEP && steps < 4) {                       // physics runs at real time, whatever the screen's refresh rate
+      if (now <= windUntil) for (const b of items) if (!b.fallen && !b.isStatic) Body.applyForce(b, b.position, { x: windDir * b.mass * .00011, y: 0 });
+      Engine.update(engine, STEP);
+      physAcc -= STEP; steps++;
+    }
+    if (steps === 4) physAcc = 0;                                 // way behind (tab was hidden): don't spiral
+    // tower top + falls
+    let top = trayY - 8;
+    for (const b of items) {
+      if (b.position.y > trayY + 60 || b.position.x < -120 || b.position.x > LW + 120) {
+        if (!b.fallen) { b.fallen = true; if (state === "play") gameOver(); }
+      } else if (b.landed && !b.miss && b.bounds.min.y < top) top = b.bounds.min.y;
+      if (state === "play" && b.counted && !b.isBase && !b.isStatic && b.speed < .3 && b.bounds.max.y > trayY - 12) {
+        b.counted = false; b.miss = true; count--; bonus -= ITEMS[b.kind].bonus || 0; combo = 0;
+        toast("Slipped! −1"); updateHud();
+      }
+    }
+    topY = top;
+    if (state === "falling" && now - overAt > 1700) { state = "over"; document.getElementById("over").classList.remove("hidden"); }
+    if (BOT && state === "play") {                               // aim for the centre of the tower top
+      const sup = support(); if (params.get("bot") === "random" ? Math.random() < .03 : Math.abs(swingX() - sup.position.x) < BOT_SKILL) drop();
+    }
+  }
+  if (BOT && state === "over" && now - overAt > 2600) { document.getElementById("over").classList.add("hidden"); reset(); }
+  // camera follows the tower top
+  const target = Math.min(trayY + 120 - LH, topY - LH * .48);   // trayY + 120 - LH = 0 unless the screen size changed
+  camTop += (target - camTop) * Math.min(1, dt / 220);
+  render();
+  requestAnimationFrame(frame);
+}
+
+const hudEl = document.getElementById("hud");
+const ROPE = 95;                                                   // rope length in world units
+function ropeAnchorPx() { const r = hudEl.getBoundingClientRect(); return (r.height ? r.bottom : 110) + 14; }
+
+const ghosts = {};                                               // preview bodies, never added to the world
+function render() {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  drawBackground();
+  ctx.setTransform(DPR * S, 0, 0, DPR * S, DPR * OX, -DPR * S * camTop);
+  drawStall();
+  if (bestTopY !== null && state === "play") {                   // previous best line
+    ctx.setLineDash([8, 8]); ctx.strokeStyle = "rgba(255,255,255,.6)"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, bestTopY); ctx.lineTo(LW, bestTopY); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = "rgba(255,255,255,.8)"; ctx.font = "800 12px system-ui"; ctx.textAlign = "left"; ctx.fillText("BEST", 6, bestTopY - 5);
+  }
+  for (const b of items) drawItem(b);
+  if (state === "play") {                                        // swinging next item on a rope
+    const x = swingX(), y = spawnY();
+    const ay = Math.max(camTop + ropeAnchorPx() / S, y - ITEMS[nextKind].h / 2 - ROPE);  // short rope, never above the score
+    const ax = x - swingVel() * 5;                                 // trolley lags a little, so the rope tilts with the swing
+    ctx.strokeStyle = "rgba(90,45,20,.35)"; ctx.lineWidth = 3;     // crane rail
+    ctx.beginPath(); ctx.moveTo(LW / 2 - swingAmp() - 40, ay); ctx.lineTo(LW / 2 + swingAmp() + 40, ay); ctx.stroke();
+    ctx.strokeStyle = "rgba(60,30,10,.75)"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(x, y - ITEMS[nextKind].h / 2); ctx.stroke();
+    ctx.fillStyle = "#5a2d14"; ctx.beginPath(); ctx.roundRect(ax - 9, ay - 5, 18, 10, 4); ctx.fill();
+    const ghost = ghosts[nextKind] || (ghosts[nextKind] = makeBody(nextKind, 0, 0));
+    Body.setAngle(ghost, 0); Body.setPosition(ghost, { x, y }); Body.setAngle(ghost, Math.sin(swingT) * .12);
+    drawItem(ghost, (performance.now() - lastDropAt) < 400 ? .35 : 1);
+    // aim guide
+    ctx.setLineDash([5, 9]); ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(x, y + ITEMS[nextKind].h / 2 + 4); ctx.lineTo(x, topY - 4);
+    ctx.strokeStyle = "rgba(40,15,5,.35)"; ctx.lineWidth = 4.5; ctx.stroke();      // faint dark edge
+    ctx.strokeStyle = "rgba(255,255,255,.92)"; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.setLineDash([]); ctx.lineCap = "butt";
+  }
+}
+
+// ---------- input & screens ----------
+function onTap(e) { if (e.target.closest && e.target.closest(".overlay")) return; e.preventDefault(); audio(); drop(); }
+addEventListener("pointerdown", onTap, { passive: false });
+addEventListener("keydown", e => { if (e.code === "Space") { audio(); drop(); } });
+function start() {
+  audio();
+  document.getElementById("start").classList.add("hidden");
+  document.getElementById("over").classList.add("hidden");
+  document.getElementById("hud").style.display = "";
+  reset();
+}
+document.getElementById("play").onclick = () => artReady.then(start);
+document.getElementById("again").onclick = start;
+function shareText() {
+  const url = location.href.split(/[?#]/)[0].replace(/index\.html$/, "");
+  return { url, text: `☕ Chai Tower: ${count + bonus} high!\nDaily #${DAILY} · 🔥 ${perfects} perfect drops\nCan you beat me? 👉 ${url}` };
+}
+function copyText(t) {                                        // works on http:// too (old-style copy as a fallback)
+  if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t).then(() => true, () => legacyCopy(t));
+  return Promise.resolve(legacyCopy(t));
+}
+function legacyCopy(t) {
+  const ta = document.createElement("textarea"); ta.value = t; ta.setAttribute("readonly", "");
+  ta.style.cssText = "position:fixed;top:-1000px;opacity:0"; document.body.appendChild(ta);
+  ta.select(); ta.setSelectionRange(0, t.length);
+  let ok = false; try { ok = document.execCommand("copy"); } catch {}
+  ta.remove(); return ok;
+}
+const shareMsg = document.getElementById("shareMsg");
+document.getElementById("share").onclick = async () => {
+  const { text, url } = shareText();
+  if (navigator.share && window.isSecureContext) {             // phones on https: the normal share sheet
+    try { await navigator.share({ text }); shareMsg.textContent = "Shared! 🎉"; return; }
+    catch (e) { if (e && e.name === "AbortError") return; }      // user closed the sheet
+  }
+  window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank", "noopener");   // otherwise: straight to WhatsApp
+  shareMsg.textContent = "Opening WhatsApp…";
+};
+document.getElementById("copy").onclick = async e => {
+  e.preventDefault();
+  const ok = await copyText(shareText().text);
+  shareMsg.textContent = ok ? "Copied! ✅ Paste it anywhere" : "Couldn't copy, take a screenshot 📸";
+};
+
+reset(); state = "idle";
+if (BOT) artReady.then(start);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
