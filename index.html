@@ -21,7 +21,7 @@
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; height: 100%; overflow: hidden; background: #2a1409; touch-action: none;
     font-family: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", sans-serif; user-select: none; -webkit-user-select: none; }
-  canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  #c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
   .hud { position: fixed; top: max(14px, env(safe-area-inset-top)); left: 0; right: 0; text-align: center; pointer-events: none; color: #fff;
     text-shadow: 0 3px 0 rgba(0,0,0,.35); }
   .hud .score { font-size: 64px; font-weight: 900; line-height: 1; }
@@ -40,6 +40,13 @@
     color: #fff; background: var(--red); box-shadow: 0 6px 0 #9e2a22; cursor: pointer; }
   .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #9e2a22; }
   .btn.alt { background: #2f8f5b; box-shadow: 0 6px 0 #1d5e3a; }
+  .btn.easy { background: #2f8f5b; box-shadow: 0 6px 0 #1d5e3a; }
+  .btn.moderate { background: #e08a1e; box-shadow: 0 6px 0 #9c5c0c; }
+  .btn.tough { background: var(--red); box-shadow: 0 6px 0 #9e2a22; }
+  .btn.lvl { margin-top: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; font-size: 20px; }
+  .btn.lvl small { font-size: 13px; font-weight: 800; opacity: .85; }
+  #hero { display: block; width: 210px; height: 150px; margin: 4px auto -4px; }
+  .link { display: inline-block; margin-top: 12px; color: var(--brown); font-weight: 800; font-size: 15px; opacity: .75; text-decoration: underline; cursor: pointer; }
   .tiny { font-size: 13px !important; opacity: .7; margin-top: 12px !important; }
   .toast { position: fixed; left: 50%; top: 32%; transform: translate(-50%, -50%); font-size: 40px; font-weight: 900; color: var(--gold);
     text-shadow: 0 4px 0 #8a4b10, 0 0 18px rgba(255,200,60,.6); pointer-events: none; opacity: 0; transition: opacity .15s; white-space: nowrap; }
@@ -58,9 +65,12 @@
 <div class="overlay" id="start">
   <div class="card">
     <h1>Chai <span>Tower</span> ☕</h1>
+    <canvas id="hero" aria-label="A stack of chai, biscuits and a samosa"></canvas>
     <p>Tap to drop. Stack the chai stall as high as you can!</p>
+    <button class="btn lvl easy" data-level="easy">🙂 Easy <small id="best_easy"></small></button>
+    <button class="btn lvl moderate" data-level="moderate">😎 Moderate <small id="best_moderate"></small></button>
+    <button class="btn lvl tough" data-level="tough">🔥 Tough <small id="best_tough"></small></button>
     <p class="tiny" id="dailyLabel"></p>
-    <button class="btn" id="play">Play</button>
   </div>
 </div>
 
@@ -71,6 +81,7 @@
     <p style="margin-top:2px">items high</p>
     <div class="row"><span id="perf">🔥 0 perfect</span><span id="best">🏆 Best 0</span></div>
     <button class="btn" id="again">One more! ☕</button>
+    <a class="link" id="change">Change level</a>
     <button class="btn alt" id="share">Share score 💬</button>
     <p class="tiny"><a href="#" id="copy" style="color:inherit;font-weight:800">Copy score</a> <span id="shareMsg"></span></p>
   </div>
@@ -83,7 +94,7 @@ const { Engine, Bodies, Body, Composite, Events } = Matter;
 
 // ---------- setup ----------
 const cv = document.getElementById("c");
-const ctx = cv.getContext("2d");
+let ctx = cv.getContext("2d");
 const LW = 400;                    // logical world width
 let S = 1, LH = 700, DPR = 1, OX = 0;
 function resize() {
@@ -386,7 +397,13 @@ const sfx = {
 const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch {} };
 
 // ---------- game state ----------
-const TRAY_W = 240;
+const LEVELS = {
+  easy:     { name: "🙂 Easy",     tray: 280, speed0: 1.3, speedUp: .035, speedMax: 3.0, perfect: 9, wind: null, kettleAfter: 15, live: 3 },
+  moderate: { name: "😎 Moderate", tray: 240, speed0: 1.7, speedUp: .055, speedMax: 4.2, perfect: 6, wind: 20,   kettleAfter: 8,  live: 4 },
+  tough:    { name: "🔥 Tough",    tray: 200, speed0: 2.2, speedUp: .07,  speedMax: 5.0, perfect: 4, wind: 12,   kettleAfter: 5,  live: 5 },
+};
+let level = LEVELS[params.get("level")] ? params.get("level") : "moderate", L = LEVELS[level], TRAY_W = L.tray;
+const bestKey = (lv = level) => lv === "moderate" ? "ct_best" : `ct_best_${lv}`;   // moderate keeps the old saved best
 let engine, trayY, tray, items, current, topY, camTop, swingT, state, count, bonus, perfects, combo, lastDropAt,
     nextKind, rand, dropIndex, windUntil, nextWindAt, windDir, overAt, bestTopY = null;
 const toastEl = document.getElementById("toast"), windEl = document.getElementById("wind");
@@ -397,11 +414,12 @@ function pickKind() {
   dropIndex++;
   if (dropIndex <= 2) return "kulhad";                      // gentle start
   if (dropIndex > 5 && rand() < .045) return "golden";
-  let k; do { k = POOL[Math.floor(rand() * POOL.length)]; } while ((ITEMS[k].after || 0) > dropIndex);
+  let k; do { k = POOL[Math.floor(rand() * POOL.length)]; } while ((k === "kettle" ? L.kettleAfter : ITEMS[k].after || 0) > dropIndex);
   return k;
 }
 
 function reset() {
+  L = LEVELS[level]; TRAY_W = L.tray;
   engine = Engine.create({ positionIterations: 12, velocityIterations: 10, constraintIterations: 4 });
   engine.gravity.y = 1.25;                                     // a bit snappier fall
   trayY = LH - 120;
@@ -434,20 +452,19 @@ function onCollide(e) {
     const off = Math.abs(b.position.x - sup.position.x);
     count++; bonus += ITEMS[b.kind].bonus || 0;
     b.counted = true; b.isBase = sup === tray;
-    if (off < 6) { combo++; perfects++; sfx.perfect(combo); buzz(25); toast(combo > 1 ? `PERFECT ×${combo}!` : "PERFECT!"); }
+    if (off < L.perfect) { combo++; perfects++; sfx.perfect(combo); buzz(25); toast(combo > 1 ? `PERFECT ×${combo}!` : "PERFECT!"); }
     else { combo = 0; sfx.land(b.kind); buzz(10); }
     if (ITEMS[b.kind].bonus) toast("⭐ GOLDEN +5!");
-    if (count === 20) { nextWindAt = performance.now() + 2500; }
+    if (L.wind && count === L.wind) { nextWindAt = performance.now() + 2500; }
     freezeBuried();
     updateHud();
   }
 }
 
 // only the top few items can wobble: items buried 4+ levels down become solid, like a real stall shelf
-const LIVE_LEVELS = 4;
 function freezeBuried() {
   const live = items.filter(b => b.landed && !b.fallen && !b.isStatic).sort((a, b) => a.position.y - b.position.y);
-  for (const b of live.slice(LIVE_LEVELS)) {
+  for (const b of live.slice(L.live)) {
     if (b.speed < .6 && b.angularSpeed < .02) Body.setStatic(b, true);
   }
 }
@@ -466,15 +483,15 @@ function drop() {
 }
 
 const swingAmp = () => 118;
-const swingSpeed = () => Math.min(1.7 + count * .055, 4.2);
+const swingSpeed = () => Math.min(L.speed0 + count * L.speedUp, L.speedMax);
 const swingX = () => LW / 2 + Math.sin(swingT) * swingAmp();
 const swingVel = () => Math.cos(swingT) * swingAmp() * swingSpeed() / 60;
 const spawnY = () => Math.min(topY, trayY) - 120;
 
 function updateHud() {
   document.getElementById("score").textContent = count + bonus;
-  const best = +store.get("ct_best") || 0;
-  document.getElementById("sub").textContent = `🏆 ${Math.max(best, count + bonus)}   ·   🔥 ${perfects} perfect`;
+  const best = +store.get(bestKey()) || 0;
+  document.getElementById("sub").textContent = `${L.name}  ·  🏆 ${Math.max(best, count + bonus)}  ·  🔥 ${perfects} perfect`;
 }
 
 function gameOver() {
@@ -483,8 +500,8 @@ function gameOver() {
   sfx.crash(); buzz([40, 30, 80]);
   toast("NAHIII! 😱");
   const score = count + bonus;
-  const best = Math.max(+store.get("ct_best") || 0, score);
-  store.set("ct_best", best);
+  const best = Math.max(+store.get(bestKey()) || 0, score);
+  store.set(bestKey(), best);
   document.getElementById("final").textContent = score;
   document.getElementById("perf").textContent = `🔥 ${perfects} perfect`;
   document.getElementById("best").textContent = `🏆 Best ${best}`;
@@ -584,11 +601,23 @@ function start() {
   document.getElementById("hud").style.display = "";
   reset();
 }
-document.getElementById("play").onclick = () => artReady.then(start);
+for (const btn of document.querySelectorAll("[data-level]"))
+  btn.onclick = () => { level = btn.dataset.level; artReady.then(start); };
 document.getElementById("again").onclick = start;
+document.getElementById("change").onclick = () => {
+  document.getElementById("over").classList.add("hidden");
+  document.getElementById("hud").style.display = "none";
+  bestTopY = null; showBests(); reset(); state = "idle";
+  document.getElementById("start").classList.remove("hidden");
+};
+function showBests() {                                         // "Best 23" on each level button
+  for (const k of Object.keys(LEVELS)) { const b = +store.get(bestKey(k)) || 0;
+    document.getElementById("best_" + k).textContent = b ? `Best ${b}` : ""; }
+}
+showBests();
 function shareText() {
   const url = location.href.split(/[?#]/)[0].replace(/index\.html$/, "");
-  return { url, text: `☕ Chai Tower: ${count + bonus} high!\nDaily #${DAILY} · 🔥 ${perfects} perfect drops\nCan you beat me? 👉 ${url}` };
+  return { url, text: `☕ Chai Tower: ${count + bonus} high on ${L.name}!\nDaily #${DAILY} · 🔥 ${perfects} perfect drops\nCan you beat me? 👉 ${url}` };
 }
 function copyText(t) {                                        // works on http:// too (old-style copy as a fallback)
   if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t).then(() => true, () => legacyCopy(t));
@@ -617,8 +646,31 @@ document.getElementById("copy").onclick = async e => {
   shareMsg.textContent = ok ? "Copied! ✅ Paste it anywhere" : "Couldn't copy, take a screenshot 📸";
 };
 
+// start-card picture: kulhad of chai, biscuit packet, samosa, gently wobbling
+const heroCv = document.getElementById("hero");
+function drawHero(now) {
+  requestAnimationFrame(drawHero);
+  if (document.getElementById("start").classList.contains("hidden")) return;
+  const dpr = Math.min(devicePixelRatio || 1, 3), cw = 210, ch = 150, z = 1.25;
+  if (heroCv.width !== cw * dpr) { heroCv.width = cw * dpr; heroCv.height = ch * dpr; }
+  const main = ctx; ctx = heroCv.getContext("2d");
+  ctx.setTransform(dpr * z, 0, 0, dpr * z, 0, 0); ctx.clearRect(0, 0, cw / z, ch / z);
+  const cx = cw / 2 / z, t = now / 1000; let y = ch / z - 6;
+  ctx.fillStyle = "rgba(90,45,20,.18)"; ctx.beginPath(); ctx.ellipse(cx, y + 1, 40, 4.5, 0, 0, 7); ctx.fill();   // soft shadow
+  ["kulhad", "biscuit", "samosa"].forEach((k, i) => {
+    const d = ITEMS[k], b = makeBody(k, 0, 0);
+    const lift = b.bounds.max.y - b.position.y;                 // centroid -> bottom edge
+    Body.setPosition(b, { x: cx + Math.sin(t * 1.6 + i * .9) * i * 1.4, y: y - lift });
+    Body.setAngle(b, Math.sin(t * 1.6 + i) * .025 * i);
+    drawItem(b);
+    y -= d.h - 1;
+  });
+  ctx = main;
+}
+requestAnimationFrame(drawHero);
+
 reset(); state = "idle";
-if (BOT) artReady.then(start);
+if (BOT) artReady.then(start);   // ?bot=3&level=tough picks a level
 requestAnimationFrame(frame);
 </script>
 </body>
