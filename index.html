@@ -33,8 +33,7 @@
   .overlay.hidden { display: none; }
   .card { width: min(360px, 100%); max-height: calc(100% - 8px); overflow: auto; background: var(--surface); color: var(--text);
     border: 1px solid var(--line); border-radius: 30px; padding: 24px 20px 18px; text-align: center;
-    box-shadow: 0 30px 80px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06);
-    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); animation: cardIn .28s cubic-bezier(.2,.9,.3,1.2); }
+    box-shadow: 0 30px 80px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06); animation: cardIn .28s cubic-bezier(.2,.9,.3,1.2); }
   @keyframes cardIn { from { transform: translateY(14px) scale(.97); opacity: 0; } to { transform: none; opacity: 1; } }
   .card h1 { margin: 0; font-size: 30px; font-weight: 900; letter-spacing: -.5px; line-height: 1.1; }
   .card p { margin: 8px 0 0; font-size: 15px; font-weight: 600; line-height: 1.4; color: var(--muted); }
@@ -56,7 +55,7 @@
     background: none; border: 0; font-family: inherit; padding: 6px 8px; }
   .tiny { font-size: 13px !important; color: var(--muted); margin-top: 10px !important; }
   #hero { display: block; width: 210px; height: 150px; margin: 2px auto -6px; }
-  /* milestone gem: gradient only on wins / new bests (Opal's milestone rule) */
+  /* milestone gem: gradient only on wins / new bests */
   .gem { display: none; width: 74px; height: 74px; margin: 0 auto 14px; border-radius: 50%; position: relative;
     background: conic-gradient(from 200deg, var(--gold1), var(--gold2), #ff8a8a, #d2a8ff, #8fe3c3, var(--gold1));
     box-shadow: 0 0 44px rgba(255, 190, 90, .45); animation: gemSpin 9s linear infinite; }
@@ -90,8 +89,8 @@
   /* in-level controls (restart / menu), hidden in the Daily */
   .hudbtns { position: fixed; top: max(14px, env(safe-area-inset-top)); left: 12px; display: none; gap: 8px; z-index: 2; }
   .hudbtns.show { display: flex; }
-  .hudbtns button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(255,255,255,.18); background: rgba(20,10,5,.35);
-    color: #fff; font-size: 18px; font-weight: 900; cursor: pointer; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  .hudbtns button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(255,255,255,.18); background: rgba(20,10,5,.55);
+    color: #fff; font-size: 18px; font-weight: 900; cursor: pointer; }
   .toast { position: fixed; left: 50%; top: 32%; transform: translate(-50%, -50%); font-size: 40px; font-weight: 900; color: var(--gold);
     text-shadow: 0 4px 0 #8a4b10, 0 0 18px rgba(255,200,60,.6); pointer-events: none; opacity: 0; transition: opacity .15s; white-space: nowrap; }
   .toast.show { opacity: 1; }
@@ -505,7 +504,7 @@ let engine, trayY, tray, items, current, topY, camTop, swingT, state, count, bon
 // level mode ("levels") vs the endless Daily Challenge ("daily")
 let mode = params.get("mode") === "levels" ? "levels" : "daily";
 let levelN = ChaiLevels.clampN(params.get("n") || 1), cur = null, lastResult = null;
-let misses, physSteps, windArmStep, settleSteps, lastCounted, kettleLandedStep, endCause, endAt, cardShown;
+let misses, physSteps, windArmStep, settleSteps, lastCounted, kettleLandedStep, endCause, endAt, cardShown, gustK, gustD;
 const goalEl = document.getElementById("goal");
 
 // saved progress per difficulty: { next: next unbeaten level, stars: { "3": 2, ... }, done: all 30 cleared }
@@ -544,7 +543,7 @@ function reset() {
   if (mode === "levels") cur = ChaiLevels.level(level, levelN);
   rand = rng(mode === "levels" ? cur.seed : DAILY * 7919); dropIndex = 0; nextKind = pickKind();
   windUntil = 0; nextWindAt = 1e12; windDir = 1; overAt = 0;
-  misses = 0; physSteps = 0; windArmStep = null; settleSteps = 0; lastCounted = null; kettleLandedStep = null;
+  misses = 0; physSteps = 0; windArmStep = null; settleSteps = 0; lastCounted = null; kettleLandedStep = null; gustK = -1; gustD = 1;
   endCause = null; endAt = 0; cardShown = false;
   engine.timing.timeScale = 1;
   Events.on(engine, "collisionStart", onCollide);
@@ -643,6 +642,9 @@ function goalMet() {
 }
 
 // level wind: scheduled in physics steps from the level seed, so a boss level is the same on every attempt
+function showGust(dir) {
+  windEl.textContent = dir > 0 ? "💨 Hawa chali! →" : "← Hawa chali! 💨"; windEl.classList.add("show"); sfx.whoosh();
+}
 function gustDir(seed, k) { const r = rng(seed); let v = 0; for (let i = 0; i <= k; i++) v = r(); return v < .5 ? -1 : 1; }
 function levelWind() {
   const w = cur && cur.wind;
@@ -651,10 +653,9 @@ function levelWind() {
   const t = physSteps - windArmStep - w.firstStep;
   if (t < 0) return 0;
   const k = Math.floor(t / w.everySteps), inGust = t % w.everySteps < w.durSteps;
-  const dir = gustDir(w.dirSeed, k);
-  if (t % w.everySteps === 0) {
-    windEl.textContent = dir > 0 ? "💨 Hawa chali! →" : "← Hawa chali! 💨"; windEl.classList.add("show"); sfx.whoosh();
-  }
+  if (k !== gustK) { gustK = k; gustD = gustDir(w.dirSeed, k); }     // direction changes only between gusts
+  const dir = gustD;
+  if (t % w.everySteps === 0) showGust(dir);
   if (t % w.everySteps === w.durSteps) windEl.classList.remove("show");
   return inGust ? dir : 0;
 }
@@ -680,13 +681,13 @@ function levelFail(cause) {
   if (state !== "play") return;
   state = "falling"; endAt = overAt = performance.now(); endCause = cause;
   windEl.classList.remove("show");
-  if (cause === "fall") { engine.timing.timeScale = .28; sfx.crash(); buzz([40, 30, 80]); toast("NAHIII! 😱"); }
+  if (cause === "fall") crashFx();
   else { sfx.land("kettle"); buzz(60); toast("Too many misses!"); }
   track(`fail-${level}-${cur.n}`, `Level fail (${level} ${cur.n})`);
   if (BOT) botNote("fail");
 }
 
-// how close was it? phrased per goal type (R8)
+// how close was it? phrased per goal type
 function failText() {
   if (endCause === "miss") return { title: "Too many misses", msg: `Only ${cur.maxMiss === 0 ? "perfect landings" : cur.maxMiss + " miss" + (cur.maxMiss > 1 ? "es" : "")} allowed here. You stacked ${Math.max(0, count)}.` };
   const need = cur.target - Math.max(0, count);
@@ -698,12 +699,12 @@ function failText() {
   return { title: "So close!", msg: cur.goal === "kettle" ? "The kettle won this time." : "The tower fell just before the end." };
 }
 
+function crashFx() { engine.timing.timeScale = .28; sfx.crash(); buzz([40, 30, 80]); toast("NAHIII! 😱"); }
+
 function gameOver() {
   if (mode === "levels") { levelFail("fall"); return; }
   state = "falling"; overAt = performance.now();
-  engine.timing.timeScale = .28;
-  sfx.crash(); buzz([40, 30, 80]);
-  toast("NAHIII! 😱");
+  crashFx();
   const score = count + bonus;
   track(`over-daily-${scoreBucket(score)}`, `Daily game over: ${scoreBucket(score)} high`);
   if (BOT) botLog.results.push({ level, daily: true, count, perfects });
@@ -727,7 +728,7 @@ function frame(now) {
     swingT += swingSpeed() * dt / 1000;
     // Daily: wind gusts after 20 items (real time)
     if (mode === "daily" && state === "play" && now > nextWindAt) { windDir = Math.random() < .5 ? -1 : 1; windUntil = now + 1600; nextWindAt = now + 6500 + Math.random() * 3000;
-      windEl.textContent = windDir > 0 ? "💨 Hawa chali! →" : "← Hawa chali! 💨"; windEl.classList.add("show"); sfx.whoosh(); }
+      showGust(windDir); }
     if (mode === "daily" && now > windUntil) windEl.classList.remove("show");
     physAcc += dt;
     let steps = 0;
@@ -856,16 +857,16 @@ function showGoal() {
 }
 function starRow(n) { return "★★★".slice(0, n) + "☆☆☆".slice(0, 3 - n); }
 function showClear() {
-  const r = lastResult, last = cur.n >= ChaiLevels.COUNT;
+  const r = lastResult, isFinal = cur.n >= ChaiLevels.COUNT;
   document.getElementById("clearDiff").textContent = LEVELS[level].name;
-  document.getElementById("clearTitle").textContent = last ? "ALL 30 CLEARED!" : `LEVEL ${cur.n} CLEAR!`;
+  document.getElementById("clearTitle").textContent = isFinal ? "ALL 30 CLEARED!" : `LEVEL ${cur.n} CLEAR!`;
   document.getElementById("clearStars").textContent = starRow(r.stars);
   document.getElementById("clearHint").textContent = r.stars < 3 ? `3 stars: ${cur.stars[2]} perfect drops` : "Perfect level! ✨";
   document.getElementById("clearPerf").textContent = `🔥 ${perfects} perfect`;
   document.getElementById("clearTotal").textContent = `⭐ ${r.total} total`;
   const next = document.getElementById("next");
-  next.textContent = last ? "↺ Replay level 30" : "Next level ▶";
-  document.getElementById("replay").style.display = last ? "none" : "";
+  next.textContent = isFinal ? "↺ Replay level 30" : "Next level ▶";
+  document.getElementById("replay").style.display = isFinal ? "none" : "";
   document.getElementById("clear").classList.toggle("milestone", r.stars === 3 || r.newBest);
   document.getElementById("clear").classList.remove("hidden");
   if (BOT) botAfterCard("clear");
@@ -892,15 +893,15 @@ function playDaily() { mode = "daily"; level = "moderate"; artReady.then(start);
 const picks = {}, seenMax = {};                                // level chosen in each difficulty's picker
 const unlocked = p => p.done ? ChaiLevels.COUNT : p.next;
 function refreshStart() {
-  const last = store.get("ct_last"), primary = LEVELS[last] ? last : "easy";
+  const lastDiff = store.get("ct_last"), primary = LEVELS[lastDiff] ? lastDiff : "easy";
   const box = document.getElementById("diffs");
   box.innerHTML = "";
   for (const diff of Object.keys(LEVELS)) {
     const p = readProg(diff), max = unlocked(p);
     if (seenMax[diff] !== max) { picks[diff] = max; seenMax[diff] = max; }   // progress moved: point at the next unbeaten level
     if (!picks[diff] || picks[diff] > max) picks[diff] = max;
-    const n = picks[diff], st = +p.stars[n] || 0;
-    const meta = p.done ? `All cleared · ⭐ ${totalStars(p)}` : `Level ${p.next}${totalStars(p) ? ` · ⭐ ${totalStars(p)}` : ""}`;
+    const n = picks[diff], st = +p.stars[n] || 0, ts = totalStars(p);
+    const meta = p.done ? `All cleared · ⭐ ${ts}` : `Level ${p.next}${ts ? ` · ⭐ ${ts}` : ""}`;
     const row = document.createElement("div");
     row.className = "diff" + (diff === primary ? " primary" : "");
     row.innerHTML = `<button class="diff-main" data-level="${diff}">${LEVELS[diff].name}<small>${meta}</small></button>
@@ -915,15 +916,13 @@ function refreshStart() {
   document.getElementById("dailyBest").textContent = db ? `Best ${db}` : "";
 }
 document.getElementById("daily").onclick = playDaily;
-document.getElementById("hudRestart").onclick = () => { if (mode === "levels" && cur) playLevel(level, cur.n); };
-document.getElementById("hudMenu").onclick = showStart;
+document.getElementById("hudRestart").onclick = () => { if (mode === "levels" && cur) replayLevel(); };
 document.getElementById("again").onclick = start;
-document.getElementById("change").onclick = showStart;
 document.getElementById("next").onclick = () => playLevel(level, cur.n >= ChaiLevels.COUNT ? cur.n : cur.n + 1);
-document.getElementById("replay").onclick = () => playLevel(level, cur.n);
-document.getElementById("retry").onclick = () => playLevel(level, cur.n);
-document.getElementById("clearMenu").onclick = showStart;
-document.getElementById("failMenu").onclick = showStart;
+const replayLevel = () => playLevel(level, cur.n);
+document.getElementById("replay").onclick = replayLevel;
+document.getElementById("retry").onclick = replayLevel;
+for (const id of ["clearMenu", "failMenu", "change", "hudMenu"]) document.getElementById(id).onclick = showStart;
 refreshStart();
 function shareText() {
   const url = location.href.split(/[?#]/)[0].replace(/index\.html$/, "");

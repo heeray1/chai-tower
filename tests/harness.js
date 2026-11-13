@@ -81,9 +81,9 @@ async function run(query, timeoutSec = 300) {
 
 async function easyCurve(runs = 10) {
   // each run: fresh profile, Easy 1 -> 7 with auto-advance, at most 3 attempts per level
-  const jobs = Array.from({ length: runs }, (_, i) => run(`mode=levels&level=easy&n=1&bot=human&seed=${i + 1}&auto=1&upto=7&cap=3`, 400));
+  const queries = Array.from({ length: runs }, (_, i) => `mode=levels&level=easy&n=1&bot=human&seed=${i + 1}&auto=1&upto=7&cap=3`);
   const out = [];
-  for (let i = 0; i < jobs.length; i += 3) out.push(...await Promise.all(jobs.slice(i, i + 3)));   // 3 browsers at a time
+  for (let i = 0; i < queries.length; i += 3) out.push(...await Promise.all(queries.slice(i, i + 3).map(q => run(q, 400))));   // 3 browsers at a time
   const clears = Array(8).fill(0), attempts = Array(8).fill(0);
   out.forEach((r, i) => {
     const log = r.botLog || { results: [], attempts: {} };
@@ -104,13 +104,15 @@ async function easyCurve(runs = 10) {
 }
 
 async function calibrate(seeds = 3, err = "") {
-  const all = [];
-  for (let s = 1; s <= seeds; s++) {
+  const one = async s => {
     const pg = await openPage(`level=moderate&bot=human&seed=${s}${err ? "&err=" + err : ""}`);
     await sleep(60000);
     const r = JSON.parse(await pg.evaluate("JSON.stringify(botLog.results.map(r => r.count))") || "[]");
-    pg.close(); all.push(...r);
-  }
+    pg.close(); return r;
+  };
+  const all = [];
+  for (let s = 1; s <= seeds; s += 3)                              // at most 3 browsers at a time
+    for (const r of await Promise.all([s, s + 1, s + 2].filter(x => x <= seeds).map(one))) all.push(...r);
   all.sort((a, b) => a - b);
   console.log(`err=${err || "default"} collapse heights:`, all.join(" "), " median:", all[Math.floor(all.length / 2)]);
 }

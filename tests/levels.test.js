@@ -3,7 +3,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const L = require("../levels.js");
 
-const DIFFS = ["easy", "moderate", "tough"];
+const DIFFS = L.DIFFS;
 
 test("Easy levels 1-7 are gentle plain stacks (3..6, level 1 = 3, no wind/kettle)", () => {
   for (let n = 1; n <= 7; n++) {
