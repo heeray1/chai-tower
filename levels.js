@@ -7,7 +7,7 @@
 
   // per difficulty: target ramp, when bosses start, defaults for random kettles and miss limits
   const DIFF = {
-    easy:     { idx: 0, opening: [3, 3, 4, 4, 5, 5, 6], base: 6, from: 8, slope: .28, cap: 14, firstBoss: 10,
+    easy:     { idx: 0, opening: [3, 3, 4, 4, 4, 5, 5], base: 6, from: 8, slope: .28, cap: 14, firstBoss: 10,
                 kettleAfter: 15, maxMiss: 2, perfectShare: .25 },
     moderate: { idx: 1, opening: [],                    base: 4, from: 1, slope: .3,  cap: 14, firstBoss: 5,
                 kettleAfter: 8,  maxMiss: 2, perfectShare: .25 },
@@ -34,7 +34,8 @@
     const target = opening ? D.opening[n - 1]
       : Math.min(D.cap, D.base + Math.floor((n - D.from) * D.slope));
     const def = { diff: key, n, seed, target, goal: "stack", boss: false, wind: null, kettleAt: null,
-                  kettleAfter: opening ? Infinity : D.kettleAfter, perfects: 0, maxMiss: null };
+                  kettleAfter: opening ? Infinity : D.kettleAfter, perfects: 0, maxMiss: null,
+                  assist: opening };   // gentle opening: slightly-off landings settle toward the centre
 
     if (!opening) {
       def.boss = n % 5 === 0 && n >= D.firstBoss;

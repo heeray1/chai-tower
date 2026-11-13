@@ -14,8 +14,11 @@ test("Easy levels 1-7 are gentle plain stacks (3..6, level 1 = 3, no wind/kettle
     assert.equal(d.kettleAt, null, `easy ${n} forced kettle`);
     assert.equal(d.kettleAfter, Infinity, `easy ${n} random kettle`);
     assert.equal(d.boss, false);
+    assert.equal(d.assist, true, `easy ${n} landing assist`);
   }
   assert.equal(L.level("easy", 1).target, 3);
+  assert.equal(L.level("easy", 8).assist, false);
+  assert.equal(L.level("moderate", 1).assist, false);
 });
 
 test("Moderate and Tough use the goal cycle from level 1; Tough L1 target >= Moderate L1", () => {
