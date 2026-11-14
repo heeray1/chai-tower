@@ -6,7 +6,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 out=dist/crazygames
-rm -rf dist && mkdir -p "$out/assets" "$out/vendor"
+rm -rf "$out" dist/chai-tower-crazygames.zip && mkdir -p "$out/assets" "$out/vendor"
 cp levels.js "$out/"
 cp vendor/matter.min.js "$out/vendor/"
 cp assets/*.png assets/stall.jpg "$out/assets/"

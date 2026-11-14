@@ -176,11 +176,12 @@ const cv = document.getElementById("c");
 let ctx = cv.getContext("2d");
 const LW = 400;                    // logical world width
 let S = 1, LH = 700, DPR = 1, OX = 0;
+const ZOOM_MAX = +(new URLSearchParams(location.search).get("zoom") || 1.6);   // ?zoom=3: bigger game for recording store videos
 function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, 3);
   cv.width = Math.round(innerWidth * DPR);
   cv.height = Math.round(innerHeight * DPR);
-  S = Math.min(innerWidth / LW, innerHeight / 700, 1.6);   // fit width and height (phones, tablets, laptops)
+  S = Math.min(innerWidth / LW, innerHeight / 700, ZOOM_MAX);   // fit width and height (phones, tablets, laptops)
   OX = (innerWidth - LW * S) / 2;
   LH = innerHeight / S;
   const k = Math.max(1, S);                                      // bigger screens: bigger score + toasts
