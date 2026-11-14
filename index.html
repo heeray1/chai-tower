@@ -194,7 +194,7 @@ const params = new URLSearchParams(location.search);
 const BOT = params.has("bot");
 const BOT_SKILL = +(params.get("bot") || 3);   // ?bot=3 = aims within 3 px       // auto-player for testing / recording Shorts footage
 // ---------- visitor counter (GoatCounter: no cookies, no personal data). Off for bot runs. ----------
-// Remove this block for CrazyGames / YouTube Playables builds: they forbid outside scripts and calls.
+// CrazyGames allows it (no personal data); its events get a "cg-" prefix so the two audiences stay apart.
 const GC_URL = "https://chaitower.goatcounter.com/count";
 if (!BOT && !/^(localhost|127\.|192\.168\.)/.test(location.hostname)) {
   const sc = document.createElement("script");
@@ -203,13 +203,43 @@ if (!BOT && !/^(localhost|127\.|192\.168\.)/.test(location.hostname)) {
 }
 function track(name, title) {
   if (BOT) return;
-  try { if (window.goatcounter && window.goatcounter.count) window.goatcounter.count({ path: name, title: title || name, event: true }); } catch {}
+  try { if (window.goatcounter && window.goatcounter.count) window.goatcounter.count({ path: (portal.build ? "cg-" : "") + name, title: title || name, event: true }); } catch {}
 }
 const scoreBucket = n => n >= 30 ? "30+" : n >= 20 ? "20-29" : n >= 10 ? "10-19" : n >= 5 ? "5-9" : "0-4";
 
+// ---------- game portal (CrazyGames build only) ----------
+// tools/build-crazygames.sh adds the CrazyGames SDK script. On the website there is no SDK and all of this does nothing.
+const CG = window.CrazyGames && window.CrazyGames.SDK;
+const portal = { build: !!CG, on: false, data: false, playing: false, adOn: false, muted: false };
+portal.ready = !CG ? Promise.resolve() : Promise.race([
+  (async () => {
+    await CG.init();
+    if (CG.environment === "disabled") return;                  // SDK on some other website: stay a plain web game
+    portal.on = true;
+    const settings = s => { portal.muted = !!(s && s.muteAudio); };
+    settings(CG.game.settings); CG.game.addSettingsChangeListener(settings);
+    portal.data = !!CG.data;
+  })(),
+  new Promise(r => setTimeout(r, 5000)),                        // SDK blocked or offline: play without it
+]).catch(() => {});
+function cg(fn) { if (portal.on) try { fn(CG); } catch {} }
+function gameplayStart() { if (!portal.playing) { portal.playing = true; cg(s => s.game.gameplayStart()); } }
+function gameplayStop() { if (portal.playing) { portal.playing = false; cg(s => s.game.gameplayStop()); } }
+// a midgame ad between rounds; the SDK decides whether one plays (at most every ~3 min). The game waits, then goes on.
+function adBreakThen(next) {
+  if (!portal.on || BOT) return next();
+  let done = false;
+  const go = () => { if (!done) { done = true; next(); } };
+  const end = () => { portal.adOn = false; go(); };
+  try { CG.ad.requestAd("midgame", { adStarted: () => { portal.adOn = true; if (AC) AC.suspend(); }, adFinished: end, adError: end }); }
+  catch { go(); }
+  setTimeout(() => { if (!portal.adOn) go(); }, 4000);          // no answer at all: don't leave the player waiting
+}
+
+// saves: the CrazyGames data module (follows logged-in players across devices) first, this browser as a fallback
 const store = {
-  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
-  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+  get(k) { let v = null; if (portal.data) try { v = CG.data.getItem(k); } catch {} if (v == null) try { v = localStorage.getItem(k); } catch {} return v; },
+  set(k, v) { if (portal.data) try { CG.data.setItem(k, String(v)); } catch {} try { localStorage.setItem(k, v); } catch {} },
 };
 
 // daily item order: same for everyone each day
@@ -256,6 +286,7 @@ const artReady = Promise.all([
     if (f.bot && d.shape === "rect") { d.shape = "trap"; d.top = d.w; d.bot = d.w * f.bot; }
   }
 });
+const gameReady = Promise.all([artReady, portal.ready]);   // art loaded and (CrazyGames build) SDK started
 
 function makeBody(kind, x, y) {
   const d = ITEMS[kind];
@@ -468,14 +499,14 @@ function drawStall() {
 let AC = null;
 function audio() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch {} } if (AC && AC.state === "suspended") AC.resume(); return AC; }
 function tone(freq, dur, type = "sine", vol = .25, when = 0) {
-  const a = AC; if (!a) return;
+  const a = AC; if (!a || portal.muted || portal.adOn) return;
   const o = a.createOscillator(), g = a.createGain(), t0 = a.currentTime + when;
   o.type = type; o.frequency.setValueAtTime(freq, t0);
   g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(.001, t0 + dur);
   o.connect(g).connect(a.destination); o.start(t0); o.stop(t0 + dur + .02);
 }
 function noise(dur, vol = .35, from = 2500, to = 200) {
-  const a = AC; if (!a) return;
+  const a = AC; if (!a || portal.muted || portal.adOn) return;
   const buf = a.createBuffer(1, a.sampleRate * dur, a.sampleRate), ch = buf.getChannelData(0);
   for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / ch.length);
   const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain(), t0 = a.currentTime;
@@ -512,6 +543,10 @@ const progKey = diff => `ct_prog_${diff}`;
 const readProg = diff => ChaiLevels.parseProg(store.get(progKey(diff)));
 function saveProg(diff, p) { store.set(progKey(diff), JSON.stringify(p)); }
 const totalStars = p => Object.values(p.stars).reduce((a, v) => a + (+v || 0), 0);
+function reportProgress() {                                     // CrazyGames: % of all 90 levels cleared (100 only when all are)
+  let done = 0; for (const d of Object.keys(LEVELS)) { const p = readProg(d); done += p.done ? ChaiLevels.COUNT : p.next - 1; }
+  cg(s => s.game.reportGameCompletedPercentage(Math.floor(done * 100 / (ChaiLevels.COUNT * Object.keys(LEVELS).length))));
+}
 const toastEl = document.getElementById("toast"), windEl = document.getElementById("wind");
 let toastTimer = 0;
 function toast(text) { toastEl.textContent = text; toastEl.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.classList.remove("show"), 650); }
@@ -663,6 +698,8 @@ function levelClear() {
   lastResult = { stars, perfects, newBest: r.newBest, total: totalStars(r.prog) };
   track(`clear-${level}-${cur.n}`, `Level clear (${level} ${cur.n})`);
   if (first) track(`first-clear-${level}-${cur.n}`, `First clear (${level} ${cur.n})`);
+  gameplayStop();
+  if (first) { reportProgress(); if (cur.boss || cur.n >= ChaiLevels.COUNT) cg(s => s.game.happytime()); }
   windEl.classList.remove("show");
   sfx.clear(); buzz([20, 40, 20]);
   toast(`LEVEL ${cur.n} CLEAR!`);
@@ -673,6 +710,7 @@ function levelClear() {
 function levelFail(cause) {
   if (state !== "play") return;
   state = "falling"; endAt = overAt = performance.now(); endCause = cause;
+  gameplayStop();
   windEl.classList.remove("show");
   if (cause === "fall") crashFx();
   else { sfx.land("kettle"); buzz(60); toast(cause === "kettle" ? "Kettle down!" : "Too many misses!"); }
@@ -698,12 +736,14 @@ function crashFx() { engine.timing.timeScale = .28; sfx.crash(); buzz([40, 30, 8
 function gameOver() {
   if (mode === "levels") { levelFail("fall"); return; }
   state = "falling"; overAt = performance.now();
+  gameplayStop();
   crashFx();
   const score = count + bonus;
   track(`over-daily-${scoreBucket(score)}`, `Daily game over: ${scoreBucket(score)} high`);
   if (BOT) botLog.results.push({ level, daily: true, count, perfects });
   const prevBest = +store.get(bestKey()) || 0, best = Math.max(prevBest, score);
   store.set(bestKey(), best);
+  if (score > prevBest && prevBest >= 5) cg(s => s.game.happytime());
   document.getElementById("over").classList.toggle("milestone", score > prevBest && score > 0);
   document.getElementById("overDaily").textContent = `Daily #${DAILY}`;
   document.getElementById("final").textContent = score;
@@ -717,6 +757,7 @@ function gameOver() {
 let last = performance.now(), physAcc = 0;
 const STEP = 1000 / 60;
 function frame(now) {
+  if (portal.adOn) { last = now; requestAnimationFrame(frame); return; }   // frozen while an ad plays
   const dt = Math.min(50, now - last); last = now;
   if (state === "play" || state === "falling" || state === "cleared") {
     swingT += swingSpeed() * dt / 1000;
@@ -824,7 +865,7 @@ function render() {
 }
 
 // ---------- input & screens ----------
-function onTap(e) { if (e.target.closest && e.target.closest(".overlay, .hudbtns")) return; e.preventDefault(); audio(); drop(); }
+function onTap(e) { if (portal.adOn) return; if (e.target.closest && e.target.closest(".overlay, .hudbtns")) return; e.preventDefault(); audio(); drop(); }
 addEventListener("pointerdown", onTap, { passive: false });
 addEventListener("keydown", e => {
   if (e.code !== "Space") return;
@@ -841,6 +882,7 @@ function start() {
   confetti = [];
   document.getElementById("hud").style.display = "";
   reset();
+  gameplayStart();
   if (mode === "levels") {
     track(`level-start-${level}-${cur.n}`, `Level start (${level} ${cur.n})`);
     if (BOT) botAttempt();
@@ -884,11 +926,12 @@ function showStart() {
   document.getElementById("hud").style.display = "none";
   document.getElementById("hudBtns").classList.remove("show");
   goalEl.classList.remove("show"); windEl.classList.remove("show");
+  gameplayStop();
   bestTopY = null; refreshStart(); reset(); state = "idle";
   document.getElementById("start").classList.remove("hidden");
 }
-function playLevel(diff, n) { mode = "levels"; level = diff; levelN = ChaiLevels.clampN(n); store.set("ct_last", diff); picks[diff] = levelN; artReady.then(start); }
-function playDaily() { mode = "daily"; level = "moderate"; artReady.then(start); }
+function playLevel(diff, n) { mode = "levels"; level = diff; levelN = ChaiLevels.clampN(n); store.set("ct_last", diff); picks[diff] = levelN; gameReady.then(start); }
+function playDaily() { mode = "daily"; level = "moderate"; gameReady.then(start); }
 const picks = {}, seenMax = {};                                // level chosen in each difficulty's picker
 const unlocked = p => p.done ? ChaiLevels.COUNT : p.next;
 function refreshStart() {
@@ -916,11 +959,12 @@ function refreshStart() {
 }
 document.getElementById("daily").onclick = playDaily;
 document.getElementById("hudRestart").onclick = () => { if (mode === "levels" && cur) replayLevel(); };
-document.getElementById("again").onclick = start;
-document.getElementById("next").onclick = () => playLevel(level, cur.n >= ChaiLevels.COUNT ? cur.n : cur.n + 1);
 const replayLevel = () => playLevel(level, cur.n);
-document.getElementById("replay").onclick = replayLevel;
-document.getElementById("retry").onclick = replayLevel;
+// between rounds (never mid-game, never on Menu): CrazyGames may show an ad here
+document.getElementById("again").onclick = () => adBreakThen(start);
+document.getElementById("next").onclick = () => adBreakThen(() => playLevel(level, cur.n >= ChaiLevels.COUNT ? cur.n : cur.n + 1));
+document.getElementById("replay").onclick = () => adBreakThen(replayLevel);
+document.getElementById("retry").onclick = () => adBreakThen(replayLevel);
 for (const id of ["clearMenu", "failMenu", "change", "hudMenu"]) document.getElementById(id).onclick = showStart;
 refreshStart();
 function shareText() {
@@ -1013,7 +1057,12 @@ function drawHero(now) {
 requestAnimationFrame(drawHero);
 
 reset(); state = "idle";
-if (BOT) artReady.then(start);   // ?bot=3&level=tough picks a level
+if (portal.build) {                                             // portals forbid outside links: no WhatsApp share
+  document.getElementById("share").style.display = "none";
+  document.getElementById("copy").parentElement.style.display = "none";
+}
+portal.ready.then(() => { if (!document.getElementById("start").classList.contains("hidden")) refreshStart(); reportProgress(); });
+if (BOT) gameReady.then(start);   // ?bot=3&level=tough picks a level
 requestAnimationFrame(frame);
 </script>
 </body>
